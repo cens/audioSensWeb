@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>AudioSens Viz</title>
+    <!--jQuery-->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <!--bootstrap    -->
+    <script src="lib/bootstrap/js/bootstrap.min.js"> </script>
+    <script src="lib/highcharts/js/highcharts.js"> </script>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?sensor=false">
+    </script>
+    <script src="lib/datepicker/js/bootstrap-datepicker.js"> </script>
+    <script src="lib/daterangepicker/js/daterangepicker.js"> </script>
+    <script src="lib/daterangepicker/js/date.js"> </script>
+    <script src="lib/filesaver/js/Filesaver.js"> </script>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="lib/datepicker/css/datepicker.css">
+    <link rel="stylesheet" href="lib/daterangepicker/css/daterangepicker.css">
+    <link rel='shortcut icon' href='favicon.ico' type='image/x-icon'/ >
+      
+    <!--application   -->
+    <script src="js/ohmage.js">    </script>
+    <script src="js/main.js">    </script>
+    <!-- Le styles -->
+    <style>
+      body {
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">AudioSens Viz</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li><a href="http://test.ohmage.org">Ohmage</a></li>
+              <li><a href="mailto:donyg@cs.ucla.edu">Contact</a></li>
+              <li><a id="logout_button" class="href="">Logout</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="container-fluid">
+        <div class="row-fluid">
+            <div class="span3 well">
+                
+                <div class="accordion" id="accordion2">
+                  
+                    <div class="accordion-group">
+                        <div class="accordion-heading">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
+                                Study Dashboard
+                            </a>
+                        </div>
+                        <div id="collapseOne" class="accordion-body collapse">
+                            <div class="accordion-inner">
+                                <form>
+                                    <div class="control-group">
+                                        <label><span class="label label-info">required </span> Date</label>
+                                        <div class="input-prepend">
+                                          <span class="add-on">
+                                            <i class="icon-calendar"></i>
+                                          </span>
+                                          <input type="text" class="span10" value="02-16-2012" id="dashboard_date" >
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" id="dashboard_button" data-loading-text="Generating...">
+                                      <i class="icon-pencil icon-white"></i>Generate Graphs</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                  
+                    
+                    <div class="accordion-group">
+                        <div class="accordion-heading">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseTwo">
+                                User Analysis
+                            </a>
+                        </div>
+                        
+                        <div id="collapseTwo" class="accordion-body collapse in">
+                            <div class="accordion-inner">
+                                <form>
+                                    <div class="control-group">
+                                        <label><span class="label label-info">required </span> User</label>
+                                        <select id="single_userList" class="span12 userList"></select>
+                                    </div>
+                                    <div class="control-group">
+                                        <label><span class="label label-info">required </span> Date</label>
+                                        <div class="input-prepend">
+                                          <span class="add-on">
+                                            <i class="icon-calendar"></i>
+                                          </span>
+                                          <input type="text" class="span10" value="02-16-2012" id="single_date" >
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" id="single_button" data-loading-text="Generating...">
+                                      <i class="icon-pencil icon-white"></i>Generate Graphs</button>
+                                </form>
+                            </div>
+                        </div>                      
+                    </div>
+                    
+                    <div class="accordion-group">
+                        <div class="accordion-heading">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseThree">
+                                Raw Data View/Download
+                            </a>
+                        </div>
+                        <div id="collapseThree" class="accordion-body collapse">
+                            <div class="accordion-inner">
+                              <form>
+                                <fieldset>
+                                  
+                                  <div class="control-group">
+                                      <label><span class="label label-info">required </span> User</label>
+                                      <select id="rawdata_userList" class="span12 userList"></select>
+                                  </div>
+                                  
+                                  <div class="control-group">
+                                    <label><span class="label label-info">required </span> Date Range</label>
+                                    <div class="input-prepend">
+                                      <span class="add-on">
+                                        <i class="icon-calendar"></i>
+                                      </span>
+                                      <input type="text" class="span10" id="rawdata_date" >
+                                    </div>
+                                  </div>
+                                  
+                                  <div class="control-group">
+                                      <label><span class="label label-info">required </span> Observer ID</label>
+                                      <input type="text" class="span12" id="rawdata_observerid" >
+                                  </div>
+                                  
+                                  <div class="control-group">
+                                      <label>Observer Version</label>
+                                      <input type="text" class="span12" id="rawdata_observerversion" >
+                                  </div>
+                                  
+                                  <div class="control-group">
+                                      <label><span class="label label-info">required </span> Stream ID</label>
+                                      <input type="text" class="span12" id="rawdata_streamid" >
+                                  </div>
+                                  
+                                  <div class="control-group">
+                                      <label><span class="label label-info">required </span> Stream Version</label>
+                                      <input type="text" class="span12" id="rawdata_streamversion" >
+                                  </div>
+                                  
+                                  <div class="control-group">
+                                      <label>Column List</label>
+                                      <input type="text" class="span12" id="rawdata_columnlist" >
+                                  </div>
+                                  
+                                  <button type="button" class="btn btn-primary span5" id="rawdataview_button"><i class="icon-search icon-white"></i>View</button>
+                                  <button type="button" class="btn btn-info span5" id="rawdatadump_button"><i class="icon-file icon-white"></i>Dump</button>
+
+                                  
+                                </fieldset>
+                              </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>      
+            </div>
+            
+            
+            <div id="container" class="span9">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="template-chart" style="display:none"></div>
+    <div class="template-map" style="display:none"></div>
+    <div class="template-table" style="display:none">
+    <table class="my-table table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Metadata</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    </div>
+    
+  </body>
+</html>

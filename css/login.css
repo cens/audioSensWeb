@@ -1,0 +1,41 @@
+.form-inline {
+  margin-top: 100px;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: left;
+}
+
+#logindiv {
+  text-align: center;
+}
+
+#logo {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.controls input {
+  width: 290px;
+}
+
+#loginbutton {
+  width: 70px;
+  margin-left: -10px;
+}
+
+#dashboard {
+  display: none;
+}
+
+select {
+  background-color: #FFFFFF;
+}
+
+#loginform {
+  width: 300px;
+  text-align: left;
+}
+
+#password {
+  width: 200px;
+}

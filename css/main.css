@@ -1,0 +1,5 @@
+#map_canvas { height: 400px }
+.my-table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}

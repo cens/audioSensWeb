@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Ohmage Authentication</title>
+    <!--jQuery-->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <!--bootstrap    -->
+    <script src="lib/bootstrap/js/bootstrap.min.js"> </script>
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
+    <!--application   -->
+    <script src="js/login.js">    </script>
+    <script src="js/ohmage.js">    </script>
+    <link rel="stylesheet" href="css/login.css">
+    <link rel='shortcut icon' href='favicon.ico' type='image/x-icon'/ >
+
+  </head>
+  <body>
+    <div id="logindiv">
+      <form id="loginform" class="well form-inline"><img id="logo" src="images/ohmage-logo.png" alt="logo">
+        <fieldset>
+          <div class="control-group">
+            <div class="controls">
+              <input id="user" placeholder="user" name="user" type="text" class="input-xlarge">
+            </div>
+          </div>
+          <div class="row">
+            <div class="control-group span3">
+              <div class="controls">
+                <input id="password" placeholder="password" name="password" type="password" class="input-xlarge">
+              </div>
+            </div>
+            <div class="span1">
+              <button id="loginbutton" class="btn btn-info">Login</button>
+            </div>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </body>
+</html>
