@@ -68,17 +68,17 @@
                                 Study Dashboard
                             </a>
                         </div>
-                        <div id="collapseOne" class="accordion-body collapse">
+                        <div id="collapseOne" class="accordion-body collapse in">
                             <div class="accordion-inner">
                                 <form>
                                     <div class="control-group">
-                                        <label><span class="label label-info">required </span> Date</label>
-                                        <div class="input-prepend">
-                                          <span class="add-on">
-                                            <i class="icon-calendar"></i>
-                                          </span>
-                                          <input type="text" class="span10" value="02-16-2012" id="dashboard_date" >
-                                        </div>
+                                      <label><span class="label label-info">required </span> Date Range</label>
+                                      <div class="input-prepend">
+                                        <span class="add-on">
+                                          <i class="icon-calendar"></i>
+                                        </span>
+                                        <input type="text" class="span10" id="dashboard_date" >
+                                      </div>
                                     </div>
                                     <button type="button" class="btn btn-primary" id="dashboard_button" data-loading-text="Generating...">
                                       <i class="icon-pencil icon-white"></i>Generate Graphs</button>
@@ -95,7 +95,7 @@
                             </a>
                         </div>
                         
-                        <div id="collapseTwo" class="accordion-body collapse in">
+                        <div id="collapseTwo" class="accordion-body collapse">
                             <div class="accordion-inner">
                                 <form>
                                     <div class="control-group">
@@ -179,6 +179,35 @@
                         </div>
                     </div>
                     
+                    <div class="accordion-group">
+                        <div class="accordion-heading">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFour">
+                                View Schema
+                            </a>
+                        </div>
+                        <div id="collapseFour" class="accordion-body collapse">
+                            <div class="accordion-inner">
+                              <form>
+                                <fieldset>
+                                  
+                                  <div class="control-group">
+                                      <label>Observer ID</label>
+                                      <input type="text" class="span12" id="schema_observerid" >
+                                  </div>
+                                  
+                                  <div class="control-group">
+                                      <label>Observer Version</label>
+                                      <input type="text" class="span12" id="schema_observerversion" >
+                                  </div>
+                                  
+                                  <button type="button" class="btn btn-primary span5" id="schema_button"><i class="icon-search icon-white"></i>View</button>
+                                  
+                                </fieldset>
+                              </form>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>      
             </div>
             
@@ -192,18 +221,34 @@
     <div class="template-chart" style="display:none"></div>
     <div class="template-map" style="display:none"></div>
     <div class="template-table" style="display:none">
-    <table class="my-table table table-striped table-bordered">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Metadata</th>
-          <th>Data</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
+      <table class="my-table table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Metadata</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
     </div>
+    <div class="template-event-table" style="display:none">
+      <table class="my-table table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Event Name</th>
+            <th>Sub-event</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="template-text" style="display:none"><pre></pre></div>
+
     
   </body>
 </html>

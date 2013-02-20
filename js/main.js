@@ -3,15 +3,19 @@ var observerId = "org.ohmage.probes.audioSensProbe";
 var sensorId = "sensors";
 var featuresId = "features";
 var classifierId = "classifiers";
-var observerVersion = 6;
-var sensorStreamVersion = 6;
-var featuresStreamVersion = 6;
-var classifierStreamVersion = 6;
+var summarizerId = "summarizers";
+var eventId = "events";
+var observerVersion = 14;
+var sensorStreamVersion = 14;
+var featuresStreamVersion = 14;
+var classifierStreamVersion = 14;
+var summarizerStreamVersion = 14;
+var eventStreamVersion = 14;
 var maximumRecords = 2000;
 
 var auth_token;
 var name;
-
+var dashboardArray;
 var speechArray;
 var secondArray;
 var batteryArray;
@@ -23,6 +27,7 @@ $(document).ready(function() {
     name = oh.getCookie("name");
     
     var userList = [];
+    dashboardArray = new Array();
     speechArray = new Array();
     secondArray = new Array();
     batteryArray = new Array();
@@ -52,8 +57,8 @@ $(document).ready(function() {
             }
         });
     
-    $('#dashboard_date').datepicker({format: 'mm-dd-yyyy'});
-    $('#dashboard_date').datepicker('setValue',new Date());
+    $('#dashboard_date').daterangepicker({startDate: Date.today().add({ months: -1 }), endDate: Date.today()});
+    $('#dashboard_date').val(Date.today().add({ months: -1 }).toString('MM/dd/yyyy') + ' - ' + Date.today().toString('MM/dd/yyyy'));
     $('#dashboard_button').button();
     $("#dashboard_button").on("click", dashboard_button_function);
     
@@ -67,12 +72,17 @@ $(document).ready(function() {
     $("#rawdataview_button").on("click", rawdataview_button_function);
     $("#rawdatadump_button").on("click", rawdatadump_button_function);
     
+    $("#schema_button").on("click", schema_button_function);
+
     function dashboard_button_function(e)
     {
-	//console.log(getStartDateTime($('#dashboard_date').val()));
-	//console.log(getEndDateTime($('#dashboard_date').val()));
-	getDashboardSensors();
 	clearContainer();
+	for(index  in userList)
+	{
+	    options = {uname : userList[index],
+		nextFun : plotDashboard};
+	    getDashboardData(options=options);
+	}
     }
     
     function single_button_function(e)
@@ -80,8 +90,9 @@ $(document).ready(function() {
 	//console.log(getStartDateTime($('#single_date').val()));
 	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
-	getSpeech();
-	getSensors();
+	getSpeech(options = {nextFun : plotSpeech});
+	getSensors(options = {nextFun : plotSensor});
+	getEvents();
     }
     
     function rawdatadump_button_function(e)
@@ -100,9 +111,51 @@ $(document).ready(function() {
 	getRawdataView();
     }
     
-    function getSpeech(num_to_skip)
+    function schema_button_function(e)
+    {
+	console.log(getStartDateTimeRange($("#rawdata_date").val()));
+	console.log(getEndDateTimeRange($("#rawdata_date").val()));
+	clearContainer();
+	getSchema();
+    }
+    
+    function getDashboardData(options, num_to_skip)
+    {
+	parameters = getParameters(stream_id = summarizerId,
+		      stream_version = summarizerStreamVersion,
+		      username = options.uname,
+		      start_date = getStartDateTimeRange($("#dashboard_date").val()),
+		      end_date = getEndDateTimeRange($("#dashboard_date").val()),
+		      column_list = "summary, frameNo, end")
+	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
+	getData(address = "/stream/read",
+		parameters = parameters,
+		dataFun = parseDashboard,
+		options = options,
+		num_to_skip = num_to_skip);
+    }
+    
+    function getSpeech(options, num_to_skip)
     {
 	console.log("in getSpeech");
+	console.log(auth_token);
+	parameters = getParameters(stream_id = summarizerId,
+		      stream_version = summarizerStreamVersion,
+		      username = $("#single_userList").val(),
+		      start_date = getStartDateTime($("#single_date").val()),
+		      end_date = getEndDateTime($("#single_date").val()),
+		      column_list = "data, frameNo, end");
+	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
+	getData(address = "/stream/read",
+		parameters = parameters,
+		dataFun = parseSpeech,
+		options = options,
+		num_to_skip = num_to_skip);
+    }
+    
+    function getSpeech_old(options, num_to_skip)
+    {
+	console.log("in getSpeech_old");
 	console.log(auth_token);
 	parameters = getParameters(stream_id = classifierId,
 		      stream_version = classifierStreamVersion,
@@ -112,12 +165,12 @@ $(document).ready(function() {
 	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
 	getData(address = "/stream/read",
 		parameters = parameters,
-		dataFun = parseSpeech,
-		secondFun = plotSpeech,
+		dataFun = parseSpeech_old,
+		options = options,
 		num_to_skip = num_to_skip);
     }
     
-    function getSensors(num_to_skip)
+    function getSensors(options, num_to_skip)
       {
 	parameters = getParameters(stream_id = sensorId,
 		      stream_version = sensorStreamVersion,
@@ -128,7 +181,21 @@ $(document).ready(function() {
 	getData(address = "/stream/read",
 		parameters = parameters,
 		dataFun = parseSensor,
-		secondFun = plotSensor,
+		options = options,
+		num_to_skip = num_to_skip);
+    }
+    
+    function getEvents(num_to_skip)
+    {
+	parameters = getParameters(stream_id = eventId,
+		      stream_version = eventStreamVersion,
+		      username = $("#single_userList").val(),
+		      start_date = getStartDateTime($("#single_date").val()),
+		      end_date = getEndDateTime($("#single_date").val()));
+	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
+	getData(address = "/stream/read",
+		parameters = parameters,
+		dataFun = parseEvent,
 		num_to_skip = num_to_skip);
     }
 
@@ -145,8 +212,6 @@ $(document).ready(function() {
 	addToParametersIfNotEmpty(parameters, "stream_id", $("#rawdata_streamid").val());
 	addToParametersIfNotEmpty(parameters, "stream_version", $("#rawdata_streamversion").val());
 	addToParametersIfNotEmpty(parameters, "column_list", $("#rawdata_columnlist").val());
-	console.log("hello");
-	console.log(parameters);
 	getData(address = "/stream/read",
 		parameters = parameters,
 		dataFun = parseRawdataDump,
@@ -166,30 +231,99 @@ $(document).ready(function() {
 	addToParametersIfNotEmpty(parameters, "stream_id", $("#rawdata_streamid").val());
 	addToParametersIfNotEmpty(parameters, "stream_version", $("#rawdata_streamversion").val());
 	addToParametersIfNotEmpty(parameters, "column_list", $("#rawdata_columnlist").val());
-	console.log("hello");
-	console.log(parameters);
 	getData(address = "/stream/read",
 		parameters = parameters,
 		dataFun = parseRawdataView,
 		num_to_skip = num_to_skip);
     }
     
-    function getDashboardSensors(num_to_skip)
-      {
-	parameters = getParameters(stream_id = sensorId,
-		      stream_version = sensorStreamVersion,
-		      username = $("#single_userList").val(),
-		      start_date = getStartDateTime($("#single_date").val()),
-		      end_date = getEndDateTime($("#single_date").val()));
-	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
-	getData(address = "/stream/read",
+    function getSchema()
+    {
+	parameters = getParametersforSchema();
+	addToParametersIfNotEmpty(parameters, "observer_id", $("#schema_observerid").val());
+	addToParametersIfNotEmpty(parameters, "observer_version", $("#schema_observerversion").val());
+	getData(address = "/observer/read",
 		parameters = parameters,
-		dataFun = parseSensor,
-		secondFun = plotDashboard,
-		num_to_skip = num_to_skip);
+		dataFun = parseSchema);
     }
     
-    function parseSpeech(response, secondFun)
+    function parseDashboard(response, options)
+    {
+	if(isFirstResult(response)) //first query
+	{
+	    dashboardArray[options.uname] = new Array();
+	    dashboardArray[options.uname]["count_total"] = new Array();
+	    dashboardArray[options.uname]["count_missing"] = new Array();
+	    dashboardArray[options.uname]["count_speech"] = new Array();
+	    dashboardArray[options.uname]["count_silent"] = new Array();
+	    dashboardArray[options.uname]["end"] = new Array();
+	}
+	
+	for(var i=0; i<response.data.length; i++)
+	{
+	    dashboardArray[options.uname]["count_total"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_total]);
+	    dashboardArray[options.uname]["count_missing"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_missing]);
+	    dashboardArray[options.uname]["count_speech"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_speech]);
+	    dashboardArray[options.uname]["count_silent"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_silent]);
+	    dashboardArray[options.uname]["end"].push([response.data[i].data.frameNo, response.data[i].data.summary.end]);
+	}
+
+	if(isMoreDataPresent(response))
+	{
+	    getMoreData(response, getDashboardData, options);
+	}
+	else
+	{
+	    //console.log(locationArray);
+	    options.nextFun(options);
+	}
+    }
+    
+    function parseSpeech(response, options)
+    {
+	if(isFirstResult(response)) //first query
+	{
+	    speechArray = new Array();
+	    speechArray["speech"] = new Array();
+	    speechArray["silent"] = new Array();
+	    speechArray["missing"] = new Array();
+	    speechArray["count"] = new Array();
+	}
+	
+	var frameNo;
+	var inferenceArr;
+	var countArr;
+	for(var i=0; i<response.data.length; i++)
+	{
+	    frameNo = response.data[i].data.frameNo;
+	    inferenceArr = response.data[i].data.data.inferenceArr;
+	    countArr = response.data[i].data.data.countArr;
+	    
+	    for(var j=0; j< inferenceArr.length; j++)
+	    {
+		var timestamp = frameNo + j * 60 * 1000;
+		if(inferenceArr[j] == -1)
+		    pushToSpeechArray(timestamp, 0, 0, 1);
+		else if(inferenceArr[j] == 0)
+		    pushToSpeechArray(timestamp, 0, 1, 0);
+		else if(inferenceArr[j] == 1)
+		    pushToSpeechArray(timestamp, 1, 0, 0);
+
+	    }
+	    
+	}
+
+	if(isMoreDataPresent(response))
+	{
+	    getMoreData(response = response, dataFun = getSpeech, options =options);
+	}
+	else
+	{
+	    options.nextFun(options = options);
+	}
+    }
+    
+    function parseSpeech_old(response, options)
     {
 	if(isFirstResult(response)) //first query
 	{
@@ -228,15 +362,14 @@ $(document).ready(function() {
 
 	if(isMoreDataPresent(response))
 	{
-	    getMoreData(response, getSpeech);
+	    getMoreData(response = response, dataFun = getSpeech_old, options =options);
 	}
 	else
 	{
-	    secondFun();
+	    options.nextFun(options = options);
 	}
     }
-    
-    function parseSensor(response, secondFun)
+    function parseSensor(response, options)
     {
 	if(isFirstResult(response)) //first query
 	{
@@ -248,32 +381,76 @@ $(document).ready(function() {
 	for(var i=0; i<response.data.length; i++)
 	{
 	    batteryArray.push([response.data[i].data.frameNo, response.data[i].data.Battery.percent]);
-	    locationArray.push([response.data[i].data.frameNo, response.data[i].data.Location]);
+	    locationArray.push([response.data[i].data.frameNo, response.data[i].metadata.location]);
 	}
 
 	if(isMoreDataPresent(response))
 	{
-	    getMoreData(response, getSensor);
+	    getMoreData(response = response, dataFun = getSensor, options = options);
 	}
 	else
 	{
-	    console.log(locationArray);
-	    secondFun();
+	    //console.log(locationArray);
+	    options.nextFun(options = options);
 	}
     }
     
-    function parseRawdataDump(response, secondFun)
+    function parseEvent(response)
     {
 	if(isFirstResult(response)) //first query
 	{
-	    console.log("in forst result");
+	    var $mycontainer = $(".template-event-table").clone();
+	    $mycontainer.removeAttr("style");
+	    $mycontainer.removeClass("template-event-table");
+	    $mycontainer.addClass("span12");
+	    $("#container").append($mycontainer);
+	    $mycontainer.find("table").attr('id','view_table');
+	}
+
+	var tbody = $("#view_table").find("tbody");	
+	var frameNo;
+	for(var i=0; i<response.data.length; i++)
+	{
+	    var trow = $("<tr>");
+	    $("<td>")
+		   .text(response.data[i].metadata.timestamp)
+		   .appendTo(trow);
+	    $("<td>")
+		   .text(JSON.stringify(response.data[i].data.event))
+		   .appendTo(trow);
+	    if('subevent' in response.data[i].data)
+	    {
+		$("<td>")
+		   .text(JSON.stringify(response.data[i].data.subevent))
+		   .appendTo(trow);
+	    }
+	    if('summary' in response.data[i].data)
+	    {
+		$("<td>")
+		   .text(JSON.stringify(response.data[i].data.summary))
+		   .appendTo(trow);
+	    }
+            trow.appendTo(tbody);
+	}
+
+	if(isMoreDataPresent(response))
+	{
+	    getMoreData(response = response, dataFun= getRawdataView);
+	}
+    }
+    
+    function parseRawdataDump(response)
+    {
+	if(isFirstResult(response)) //first query
+	{
+	    console.log("in first result");
 	    rawdataArray.length = 0;
 	}
 	
 	rawdataArray = rawdataArray.concat(response.data);
 	if(isMoreDataPresent(response))
 	{
-	    getMoreData(response, getRawdataDump);
+	    getMoreData(response = response, dataFun = getRawdataDump);
 	}
 	else
 	{
@@ -313,17 +490,177 @@ $(document).ready(function() {
 
 	if(isMoreDataPresent(response))
 	{
-	    getMoreData(response, getRawdataView);
+	    getMoreData(response = response, dataFun= getRawdataView);
 	}
+    }
+    
+    function parseSchema(response)
+    {
+	var $mycontainer = $(".template-text").clone();
+	$mycontainer.removeAttr("style");
+	$mycontainer.removeClass("template-text");
+	$mycontainer.addClass("span12");
+	$mycontainer.attr("id","schema-text");
+	$("#container").append($mycontainer);
+
+	$("#schema-text").find("pre").text(JSON.stringify(response.data, undefined, 2));
+	//console.log(JSON.stringify(response.data, undefined, 2));
     }
 
 
 });
 
+function plotDashboard(options)
+{
+    var $mycontainer = $(".template-chart").clone();
+    $mycontainer.removeAttr("style");
+    $mycontainer.removeClass("template-chart");
+    $("#container").append($mycontainer);
+    
+    var chart = new Highcharts.Chart({
+	chart: {
+	    renderTo: $mycontainer[0],
+	    borderWidth: 1,
+	    zoomType : 'x',
+	    alignTicks: false
+	},
+	credits:{enabled:false},
+	plotOptions: {
+	  column: {
+		borderWidth :0,
+		stacking: 'percent',
+		animation: false,
+		lineWidth:1,
+		shadow: false
+	  }
+	},
+	title: {
+	    text: 'Summary for user \'' + options.uname +'\''
+	},
+	xAxis: {
+	    type: 'datetime',
+	    minRange: 12 * 3600 * 1000,
+	    dateTimeLabelFormats: {
+		hour: '%H:%M'
+	    }
+	},
+	yAxis: [{
+	    title:
+	    {
+		enabled: false,
+		text: 'Percent'
+	    },
+	    min: 0,
+	    max:100
+	}, { // Secondary yAxis
+	    min: 0,
+	    gridLineWidth: 0,
+	    title: {
+		text: 'Total Samples per hour',
+	    },
+	    labels: {
+		formatter: function() {
+		    return this.value +' samples';
+		},
+	    },
+	    opposite: true
+        }],
+	
+	series: [{
+	    name: 'Minutes with missing data',
+	    type: 'column',
+	    data:  dashboardArray[options.uname]["count_missing"]
+	}, {
+	    name: 'Speech minutes',
+	    type: 'column',
+    	    color: '#7FC97F',
+	    data:  dashboardArray[options.uname]["count_speech"]
+	},{
+	    name: 'Non-speech minutes',
+	    type: 'column',
+	    color: '#FDC086',
+	    data:  dashboardArray[options.uname]["count_silent"]
+	},{
+	    name: 'Number of Sample per hour',
+	    type: 'line',
+	    visible: false,
+	    yAxis: 1,
+	    data:  dashboardArray[options.uname]["count_total"],
+	    marker: {
+                    enabled: false
+                },
+	}]
+    });
+}
+
 function plotSpeech()
 {
-    //return;
     console.log("in plotSpeech");
+    var $mycontainer = $(".template-chart").clone();
+    $mycontainer.removeAttr("style");
+    $mycontainer.removeClass("template-chart");
+    $("#container").append($mycontainer);
+    
+    var chart = new Highcharts.Chart({
+	chart: {
+	    renderTo: $mycontainer[0],
+	    type: 'column',
+    	    zoomType : 'x',
+	    borderWidth: 1
+	},
+	credits:{enabled:false},
+	plotOptions: {
+	  column: {
+		borderWidth :0,
+		pointPadding:0,
+		groupPadding:0,
+		stacking: 'percent',
+		animation: false,
+		lineWidth:0,
+		enableMouseTracking: false,
+		shadow: false
+	  }
+	},
+	title: {
+	    text: 'Temporal Summary'
+	},
+	xAxis: {
+	    type: 'datetime',
+	    minRange: 1800 * 1000,
+	    dateTimeLabelFormats: {
+		hour: '%H:%M'
+	    }
+	},
+	yAxis: {
+	    labels:
+	    {
+		enabled: false
+	    },
+	    title:
+	    {
+		enabled: false,
+		text: ''
+	    }
+	},
+	
+	series: [{
+	    name: 'Speech Minute',
+	    color: '#7FC97F',
+	    data: speechArray["speech"]
+	}, {
+	    name: 'Non-Speech Minute',
+	    color: '#FDC086',
+	    data: speechArray["silent"]
+	}, {
+	    name: 'Missing points',
+	    data: speechArray["missing"]
+	}]
+    });
+}
+
+function plotSpeech_old()
+{
+    console.log("in plotSpeech_old");
     var $mycontainer = $(".template-chart").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
@@ -335,6 +672,7 @@ function plotSpeech()
 	    type: 'column',
 	    borderWidth: 1
 	},
+	credits:{enabled:false},
 	plotOptions: {
 	  column: {
 		borderWidth :0,
@@ -397,8 +735,10 @@ function plotBattery()
 	chart: {
 	    renderTo: $mycontainer[0],
 	    type: 'area',
+	    animation: false,
 	    borderWidth: 1
 	},
+	credits:{enabled:false},
 	plotOptions: {
 	  column: {
 	    borderWidth :0
@@ -434,10 +774,6 @@ function plotBattery()
     });
 }
 
-function plotDashboard()
-{
-}
-
 function plotLocation()
 {
     var $mycontainer = $(".template-map").clone();
@@ -468,6 +804,13 @@ function plotLocation()
         });
     }
     map.fitBounds(bounds);
+}
+
+function pushToSpeechArray(timestamp, speech, silent, missing)
+{
+    speechArray["speech"].push([timestamp, speech]);
+    speechArray["silent"].push([timestamp, silent]);
+    speechArray["missing"].push([timestamp, missing]);
 }
 
 function getSpeechArrayData(dataArray, type)
@@ -512,6 +855,15 @@ function getParameters(stream_id, stream_version, username, start_date, end_date
 	    };    
 }
 
+function getParametersforSchema()
+{
+    return {
+	    auth_token : auth_token,
+	    observer_id : observerId,
+	    observer_version : observerVersion,
+	    };    
+}
+
 function addToParametersIfNotEmpty(parameters, name, value)
 {
     if(value != undefined && value.trim() != '')
@@ -520,25 +872,21 @@ function addToParametersIfNotEmpty(parameters, name, value)
     }
 }
 
-function getData(address, parameters, dataFun, secondFun, num_to_skip)
+function getData(address, parameters, dataFun, options, num_to_skip)
 {
-    console.log("in getData");
-
     if(num_to_skip)
     {
         parameters.num_to_skip =  num_to_skip;
-        oh.call(address, parameters, dataFun);
     }
-    
-    oh.call(address, parameters, dataFun, secondFun);   
+    oh.call(address, parameters, dataFun, options);   
 }
 
-function getMoreData(response, dataFun)
+function getMoreData(response, dataFun, options)
 {
     console.log("in getMoreData");
 
     num_to_skip = getURLParameter(response.metadata.next,"num_to_skip");
-    dataFun(num_to_skip);
+    dataFun(options=options, num_to_skip=num_to_skip);
 }
 
 function isFirstResult(response)

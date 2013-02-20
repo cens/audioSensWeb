@@ -2,7 +2,7 @@ var oh = oh || {};
 
 var ohmageServerUrl = "https://test.ohmage.org";
 
-oh.call = function(path, data, datafun, secondfun){
+oh.call = function(path, data, datafun, options){
 	
 	function processError(errors){
 		if(errors[0].code && errors[0].code == "0200"){
@@ -37,11 +37,7 @@ oh.call = function(path, data, datafun, secondfun){
 		var response = jQuery.parseJSON(rsptxt);
 		if(response.result == "success"){
 			if(datafun){
-				if(secondfun){
-					datafun(response, secondfun);
-				} else {
-					datafun(response);
-				}
+				datafun(response, options = options);
 			}
 		} else if(response.result == "failure") {
 			processError(response.errors)
