@@ -387,7 +387,7 @@ $(document).ready(function() {
 
 	if(isMoreDataPresent(response))
 	{
-	    getMoreData(response = response, dataFun = getSensor, options = options);
+	    getMoreData(response = response, dataFun = getSensors, options = options);
 	}
 	else
 	{
@@ -910,7 +910,6 @@ function isFirstResult(response)
 
 function getOuterElement(outerElement)
 {
-    console.log("inouterele");
     var $mycontainer = $(".template-outer").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-outer");
