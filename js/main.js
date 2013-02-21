@@ -80,7 +80,8 @@ $(document).ready(function() {
 	for(index  in userList)
 	{
 	    options = {uname : userList[index],
-		nextFun : plotDashboard};
+		    nextFun : plotDashboard,
+		    outerElement : getOuterElement()};
 	    getDashboardData(options=options);
 	}
     }
@@ -90,9 +91,9 @@ $(document).ready(function() {
 	//console.log(getStartDateTime($('#single_date').val()));
 	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
-	getSpeech(options = {nextFun : plotSpeech});
-	getSensors(options = {nextFun : plotSensor});
-	getEvents();
+	getSpeech(options = {nextFun : plotSpeech, outerElement : getOuterElement()});
+	getSensors(options = {nextFun : plotSensor, outerElement : getOuterElement()});
+	getEvents(options = {outerElement : getOuterElement()});
     }
     
     function rawdatadump_button_function(e)
@@ -185,7 +186,7 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
-    function getEvents(num_to_skip)
+    function getEvents(options, num_to_skip)
     {
 	parameters = getParameters(stream_id = eventId,
 		      stream_version = eventStreamVersion,
@@ -196,6 +197,7 @@ $(document).ready(function() {
 	getData(address = "/stream/read",
 		parameters = parameters,
 		dataFun = parseEvent,
+		options = options,
 		num_to_skip = num_to_skip);
     }
 
@@ -274,7 +276,6 @@ $(document).ready(function() {
 	}
 	else
 	{
-	    //console.log(locationArray);
 	    options.nextFun(options);
 	}
     }
@@ -395,7 +396,7 @@ $(document).ready(function() {
 	}
     }
     
-    function parseEvent(response)
+    function parseEvent(response, options)
     {
 	if(isFirstResult(response)) //first query
 	{
@@ -403,7 +404,7 @@ $(document).ready(function() {
 	    $mycontainer.removeAttr("style");
 	    $mycontainer.removeClass("template-event-table");
 	    $mycontainer.addClass("span12");
-	    $("#container").append($mycontainer);
+	    options.outerElement.append($mycontainer);
 	    $mycontainer.find("table").attr('id','view_table');
 	}
 
@@ -515,7 +516,7 @@ function plotDashboard(options)
     var $mycontainer = $(".template-chart").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
-    $("#container").append($mycontainer);
+    options.outerElement.append($mycontainer);
     
     var chart = new Highcharts.Chart({
 	chart: {
@@ -593,13 +594,13 @@ function plotDashboard(options)
     });
 }
 
-function plotSpeech()
+function plotSpeech(options)
 {
     console.log("in plotSpeech");
     var $mycontainer = $(".template-chart").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
-    $("#container").append($mycontainer);
+    options.outerElement.append($mycontainer);
     
     var chart = new Highcharts.Chart({
 	chart: {
@@ -658,13 +659,13 @@ function plotSpeech()
     });
 }
 
-function plotSpeech_old()
+function plotSpeech_old(options)
 {
     console.log("in plotSpeech_old");
     var $mycontainer = $(".template-chart").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
-    $("#container").append($mycontainer);
+    options.outerElement.append($mycontainer);
     
     var chart = new Highcharts.Chart({
 	chart: {
@@ -718,18 +719,18 @@ function plotSpeech_old()
     });
 }
 
-function plotSensor()
+function plotSensor(options)
 {
-    plotBattery();
-    plotLocation();
+    plotBattery(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
+    plotLocation(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
 }
 
-function plotBattery()
+function plotBattery(options)
 {
     var $mycontainer = $(".template-chart").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
-    $("#container").append($mycontainer);
+    options.outerElement.append($mycontainer);
     
     var chart = new Highcharts.Chart({
 	chart: {
@@ -774,14 +775,14 @@ function plotBattery()
     });
 }
 
-function plotLocation()
+function plotLocation(options)
 {
     var $mycontainer = $(".template-map").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-map");
     $mycontainer.attr('id','map_canvas');
     //$mycontainer.attr('class','span12');
-    $("#container").append($mycontainer);
+    options.outerElement.append($mycontainer);
     
     var mapOptions = {
           zoom: 8,
@@ -790,7 +791,8 @@ function plotLocation()
 	
     var map = new google.maps.Map(document.getElementById("map_canvas"),
             mapOptions);
-    
+        
+    var markers = [];
     var bounds = new google.maps.LatLngBounds();
     for (var i = 0; i < locationArray.length; i++)
     {
@@ -799,11 +801,13 @@ function plotLocation()
         bounds.extend(pos);
         var marker = new google.maps.Marker({
             position: pos,
-            map: map,
             title: new Date(location[1].frameNo).toDateString(),
         });
+	markers.push(marker);
     }
     map.fitBounds(bounds);
+    var markerCluster = new MarkerClusterer(map, markers, {gridSize: 30,});
+
 }
 
 function pushToSpeechArray(timestamp, speech, silent, missing)
@@ -902,6 +906,18 @@ function isFirstResult(response)
 	else
 	    return false;
     }
+}
+
+function getOuterElement(outerElement)
+{
+    console.log("inouterele");
+    var $mycontainer = $(".template-outer").clone();
+    $mycontainer.removeAttr("style");
+    $mycontainer.removeClass("template-outer");
+    if(outerElement == null)
+        outerElement = $("#container");
+    outerElement.append($mycontainer);    
+    return $mycontainer;
 }
 
 function clearContainer()
