@@ -618,7 +618,7 @@ function plotSpeech(options)
 		stacking: 'percent',
 		animation: false,
 		lineWidth:0,
-		enableMouseTracking: false,
+		enableMouseTracking: true,
 		shadow: false
 	  }
 	},
