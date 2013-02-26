@@ -27,6 +27,7 @@ $(document).ready(function() {
     name = oh.getCookie("name");
     
     var userList = [];
+    charts = new Array();
     dashboardArray = new Array();
     speechArray = new Array();
     secondArray = new Array();
@@ -57,6 +58,8 @@ $(document).ready(function() {
             }
         });
     
+    $(".userListNone").append($("<option />").val("None").text("None"));
+    
     $('#dashboard_date').daterangepicker({startDate: Date.today().add({ months: -1 }), endDate: Date.today()});
     $('#dashboard_date').val(Date.today().add({ months: -1 }).toString('MM/dd/yyyy') + ' - ' + Date.today().toString('MM/dd/yyyy'));
     $('#dashboard_button').button();
@@ -66,6 +69,11 @@ $(document).ready(function() {
     $('#single_date').datepicker('setValue',new Date());
     $('#single_button').button();
     $("#single_button").on("click", single_button_function);
+    
+    $('#compare_date').datepicker({format: 'mm-dd-yyyy'});
+    $('#compare_date').datepicker('setValue',new Date());
+    $('#compare_button').button();
+    $("#compare_button").on("click", compare_button_function);
     
     $('#rawdata_date').daterangepicker({startDate: Date.today().add({ days: -1 }), endDate: Date.today()});
     $('#rawdata_date').val(Date.today().add({ days: -1 }).toString('MM/dd/yyyy') + ' - ' + Date.today().toString('MM/dd/yyyy'));
@@ -91,9 +99,60 @@ $(document).ready(function() {
 	//console.log(getStartDateTime($('#single_date').val()));
 	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
-	getSpeech(options = {nextFun : plotSpeech, outerElement : getOuterElement()});
+	getSpeech(options = {nextFun : plotSpeech,
+		  uname: $("#single_userList").val(),
+		  start: getStartDateTime($("#single_date").val()),
+		  end: getEndDateTime($("#single_date").val()),
+		  outerElement : getOuterElement()});
 	getSensors(options = {nextFun : plotSensor, outerElement : getOuterElement()});
 	getEvents(options = {outerElement : getOuterElement()});
+    }
+    
+    function compare_button_function(e)
+    {
+	//console.log(getStartDateTime($('#single_date').val()));
+	//console.log(getEndDateTime($('#single_date').val()));
+	clearContainer();
+	if($("#compare_userList1").val() != "None")
+	{
+	    getSpeech(options = {nextFun : plotSpeech_compare,
+				uname: $("#compare_userList1").val(),
+				start: getStartDateTime($("#compare_date").val()),
+				end: getEndDateTime($("#compare_date").val()),
+				outerElement : getOuterElement()});
+	}
+	if($("#compare_userList2").val() != "None")
+	{
+	    getSpeech(options = {nextFun : plotSpeech_compare,
+				uname: $("#compare_userList2").val(),
+				start: getStartDateTime($("#compare_date").val()),
+				end: getEndDateTime($("#compare_date").val()),
+				outerElement : getOuterElement()});
+	}
+	if($("#compare_userList3").val() != "None")
+	{
+	    getSpeech(options = {nextFun : plotSpeech_compare,
+				uname: $("#compare_userList3").val(),
+				start: getStartDateTime($("#compare_date").val()),
+				end: getEndDateTime($("#compare_date").val()),
+				outerElement : getOuterElement()});
+	}
+	if($("#compare_userList4").val() != "None")
+	{
+	    getSpeech(options = {nextFun : plotSpeech_compare,
+				uname: $("#compare_userList4").val(),
+				start: getStartDateTime($("#compare_date").val()),
+				end: getEndDateTime($("#compare_date").val()),
+				outerElement : getOuterElement()});
+	}
+	if($("#compare_userList5").val() != "None")
+	{
+	    getSpeech(options = {nextFun : plotSpeech_compare,
+				uname: $("#compare_userList5").val(),
+				start: getStartDateTime($("#compare_date").val()),
+				end: getEndDateTime($("#compare_date").val()),
+				outerElement : getOuterElement()});
+	}
     }
     
     function rawdatadump_button_function(e)
@@ -138,13 +197,13 @@ $(document).ready(function() {
     
     function getSpeech(options, num_to_skip)
     {
-	console.log("in getSpeech");
+	console.log("in getSpeech:"+options.uname);
 	console.log(auth_token);
 	parameters = getParameters(stream_id = summarizerId,
 		      stream_version = summarizerStreamVersion,
-		      username = $("#single_userList").val(),
-		      start_date = getStartDateTime($("#single_date").val()),
-		      end_date = getEndDateTime($("#single_date").val()),
+		      username = options.uname,
+		      start_date = options.start,
+		      end_date = options.end,
 		      column_list = "data, frameNo, end");
 	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
 	getData(address = "/stream/read",
@@ -284,11 +343,11 @@ $(document).ready(function() {
     {
 	if(isFirstResult(response)) //first query
 	{
-	    speechArray = new Array();
-	    speechArray["speech"] = new Array();
-	    speechArray["silent"] = new Array();
-	    speechArray["missing"] = new Array();
-	    speechArray["count"] = new Array();
+	    speechArray[options.uname] = new Array();
+	    speechArray[options.uname]["speech"] = new Array();
+	    speechArray[options.uname]["silent"] = new Array();
+	    speechArray[options.uname]["missing"] = new Array();
+	    speechArray[options.uname]["count"] = new Array();
 	}
 	
 	var frameNo;
@@ -304,11 +363,11 @@ $(document).ready(function() {
 	    {
 		var timestamp = frameNo + j * 60 * 1000;
 		if(inferenceArr[j] == -1)
-		    pushToSpeechArray(timestamp, 0, 0, 1);
+		    pushToSpeechArray(timestamp, options.uname, 0, 0, 1);
 		else if(inferenceArr[j] == 0)
-		    pushToSpeechArray(timestamp, 0, 1, 0);
+		    pushToSpeechArray(timestamp, options.uname, 0, 1, 0);
 		else if(inferenceArr[j] == 1)
-		    pushToSpeechArray(timestamp, 1, 0, 0);
+		    pushToSpeechArray(timestamp, options.uname, 1, 0, 0);
 
 	    }
 	    
@@ -328,7 +387,7 @@ $(document).ready(function() {
     {
 	if(isFirstResult(response)) //first query
 	{
-	    speechArray = new Array();
+	    speechArray[options.uname] = new Array();
 	}
 	
 	var frameNo;
@@ -357,7 +416,7 @@ $(document).ready(function() {
 		object = new Object();
 		object.hasSpeech = hasSpeech;
 		object.timestamp = timestamp;
-		speechArray[frameNo] = object;
+		speechArray[options.uname][frameNo] = object;
 	    }
 	}
 
@@ -623,7 +682,7 @@ function plotSpeech(options)
 	  }
 	},
 	title: {
-	    text: 'Temporal Summary'
+	    text: 'Temporal Summary for ' +options.uname
 	},
 	xAxis: {
 	    type: 'datetime',
@@ -647,16 +706,103 @@ function plotSpeech(options)
 	series: [{
 	    name: 'Speech Minute',
 	    color: '#7FC97F',
-	    data: speechArray["speech"]
+	    data: speechArray[options.uname]["speech"]
 	}, {
 	    name: 'Non-Speech Minute',
 	    color: '#FDC086',
-	    data: speechArray["silent"]
+	    data: speechArray[options.uname]["silent"]
 	}, {
 	    name: 'Missing points',
-	    data: speechArray["missing"]
+	    data: speechArray[options.uname]["missing"]
 	}]
     });
+}
+
+function plotSpeech_compare(options)
+{
+    console.log("in plotSpeech_convert:"+new Date(addTimeZone(options.start)));
+    var $mycontainer = $(".template-chart").clone();
+    $mycontainer.removeAttr("style");
+    $mycontainer.removeClass("template-chart");
+    options.outerElement.append($mycontainer);
+    
+    var chart = new Highcharts.Chart({
+	chart: {
+	    renderTo: $mycontainer[0],
+	    type: 'column',
+    	    zoomType : 'x',
+	    borderWidth: 1,
+	    events : {
+		selection: function(event) {
+		    if(!event.xAxis)
+		    {
+			for(index in charts)
+			{
+			    charts[index].xAxis[0].setExtremes();
+			}
+		    }
+		    else
+		    {
+			for(index in charts)
+			{
+			    charts[index].xAxis[0].setExtremes(event.xAxis[0].min, event.xAxis[0].max);
+			    charts[index].showResetZoom();
+			}
+		    }
+		}
+	    }
+	},
+	credits:{enabled:false},
+	plotOptions: {
+	  column: {
+		borderWidth :0,
+		pointPadding:0,
+		groupPadding:0,
+		stacking: 'percent',
+		animation: false,
+		lineWidth:0,
+		enableMouseTracking: true,
+		shadow: false
+	  }
+	},
+	title: {
+	    text: 'Temporal Summary for ' +options.uname
+	},
+	xAxis: {
+	    type: 'datetime',
+	    min : new Date(addTimeZone(options.start)).getTime(),
+	    max : new Date(addTimeZone(options.end)).getTime(),
+	    minRange: 1800 * 1000,
+	    dateTimeLabelFormats: {
+		hour: '%e. %b %H:%M'
+	    }
+	},
+	yAxis: {
+	    labels:
+	    {
+		enabled: false
+	    },
+	    title:
+	    {
+		enabled: false,
+		text: ''
+	    }
+	},
+	
+	series: [{
+	    name: 'Speech Minute',
+	    color: '#7FC97F',
+	    data: speechArray[options.uname]["speech"]
+	}, {
+	    name: 'Non-Speech Minute',
+	    color: '#FDC086',
+	    data: speechArray[options.uname]["silent"]
+	}, {
+	    name: 'Missing points',
+	    data: speechArray[options.uname]["missing"]
+	}]
+    });
+    charts.push(chart);
 }
 
 function plotSpeech_old(options)
@@ -710,11 +856,11 @@ function plotSpeech_old(options)
 	series: [{
 	    name: 'Speech',
 	    color: '#7FC97F',
-	    data: getSpeechArrayData(speechArray,"speech")
+	    data: getSpeechArrayData(speechArray[options.uname],"speech")
 	}, {
 	    name: 'Non-Speech',
 	    color: '#FDC086',
-	    data: getSpeechArrayData(speechArray,"nonspeech")
+	    data: getSpeechArrayData(speechArray[options.uname],"nonspeech")
 	}]
     });
 }
@@ -803,6 +949,13 @@ function plotLocation(options)
             position: pos,
             title: new Date(location[1].frameNo).toDateString(),
         });
+	/*
+	marker.info = new google.maps.InfoWindow({
+	    content: '<b>Speed:</b> '  + ' knots'
+	  });
+	google.maps.event.addListener(marker, 'click', function() {
+	    marker.info.open(map, marker);
+	  });*/
 	markers.push(marker);
     }
     map.fitBounds(bounds);
@@ -810,11 +963,11 @@ function plotLocation(options)
 
 }
 
-function pushToSpeechArray(timestamp, speech, silent, missing)
+function pushToSpeechArray(timestamp, uname, speech, silent, missing)
 {
-    speechArray["speech"].push([timestamp, speech]);
-    speechArray["silent"].push([timestamp, silent]);
-    speechArray["missing"].push([timestamp, missing]);
+    speechArray[uname]["speech"].push([timestamp, speech]);
+    speechArray[uname]["silent"].push([timestamp, silent]);
+    speechArray[uname]["missing"].push([timestamp, missing]);
 }
 
 function getSpeechArrayData(dataArray, type)
@@ -922,6 +1075,7 @@ function getOuterElement(outerElement)
 function clearContainer()
 {
     $("#container").empty();
+    charts = [];
 }
 
 function isMoreDataPresent(response)
@@ -966,6 +1120,11 @@ function getTimeZone()
           pad(Math.abs(offset%60), 2));
     return offset;
     
+}
+
+function addTimeZone(date)
+{
+    return date.substring(0,date.length-6)+getTimeZone();
 }
 
 function pad(number, length)
