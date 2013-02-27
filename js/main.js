@@ -34,6 +34,7 @@ $(document).ready(function() {
     batteryArray = new Array();
     locationArray = new Array();
     rawdataArray = new Array();
+    speechReady = false;
     
     oh.call("/class/read", {
         auth_token : auth_token,
@@ -379,6 +380,7 @@ $(document).ready(function() {
 	}
 	else
 	{
+	    speechReady = true;
 	    options.nextFun(options = options);
 	}
     }
@@ -867,6 +869,11 @@ function plotSpeech_old(options)
 
 function plotSensor(options)
 {
+    waitForSpeech(plotSensor_real, options);
+}
+
+function plotSensor_real(options)
+{
     plotBattery(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
     plotLocation(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
 }
@@ -968,6 +975,18 @@ function pushToSpeechArray(timestamp, uname, speech, silent, missing)
     speechArray[uname]["speech"].push([timestamp, speech]);
     speechArray[uname]["silent"].push([timestamp, silent]);
     speechArray[uname]["missing"].push([timestamp, missing]);
+}
+
+function waitForSpeech(funct, options)
+{
+    if (!speechReady)
+    {
+	setTimeout(waitForSpeech,100,func,options);
+    }
+    else
+    {
+	funct(options);
+    }
 }
 
 function getSpeechArrayData(dataArray, type)
@@ -1076,6 +1095,7 @@ function clearContainer()
 {
     $("#container").empty();
     charts = [];
+    speechReady = false;
 }
 
 function isMoreDataPresent(response)
