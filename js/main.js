@@ -1111,6 +1111,7 @@ function resetMarkers()
 	markers[index].setVisible(true);
     }
     markerCluster.repaint();
+    resetInfoWindow();
 }
 
 function selectMarkers(start, end)
@@ -1128,6 +1129,7 @@ function selectMarkers(start, end)
 	}
     }
     markerCluster.repaint();
+    resetInfoWindow();
 }
 
 function getParameters(stream_id, stream_version, username, start_date, end_date)
