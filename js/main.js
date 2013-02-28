@@ -1011,7 +1011,7 @@ function waitForSpeech(func, options)
     }
     else
     {
-	funct(options);
+	func(options);
     }
 }
 
