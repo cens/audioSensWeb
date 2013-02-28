@@ -23,6 +23,9 @@ var locationArray;
 var rawdataArray;
 
 var infoWindow;
+var markers;
+var map;
+var markerCluster;
 
 $(document).ready(function() {
     auth_token = oh.getCookie("auth_token");
@@ -39,6 +42,7 @@ $(document).ready(function() {
     rawdataArray = new Array();
     speechReady = false;
     rawdataSize = 0;
+    markers = [];
     
     oh.call("/class/read", {
         auth_token : auth_token,
@@ -107,11 +111,11 @@ $(document).ready(function() {
 	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
 	uname = $("#single_userList").val();
-	addTips(["Select a time range in the Dail Summary graph to zoom in",
+	addTips(["Select a time range in the Dail Summary graph to zoom in. The markers on the mpa are updated as well",
 		 "Hover over points in the map to get more details about the point/cluster of points",
 		 "In the map, Speech points are green in color, non-speech points are orange in color",
 		 "Blue points in the map stand for pending points. Pending points stand for points which are still being processed. Kindly check after sometime to view those points as well",
-		 "The list of events log major events related to the app, such as the app being started/stopped, the phone rebooting and the app crashing",
+		 "The 'List of events' logs major events related to the app, such as the app being started/stopped, the phone rebooting and the app crashing",
 		 "The charts may take a few seconds to load, kindly be patient"]);
 	getSpeech(options = {nextFun : plotSpeech,
 		    uname: uname,
@@ -148,8 +152,8 @@ $(document).ready(function() {
     
     function rawdatadump_button_function(e)
     {
-	console.log(getStartDateTimeRange($("#rawdata_date").val()));
-	console.log(getEndDateTimeRange($("#rawdata_date").val()));
+	//console.log(getStartDateTimeRange($("#rawdata_date").val()));
+	//console.log(getEndDateTimeRange($("#rawdata_date").val()));
 	clearContainer();
 	addTips([]);
 	getRawdataDump();
@@ -157,8 +161,8 @@ $(document).ready(function() {
     
     function rawdataview_button_function(e)
     {
-	console.log(getStartDateTimeRange($("#rawdata_date").val()));
-	console.log(getEndDateTimeRange($("#rawdata_date").val()));
+	//console.log(getStartDateTimeRange($("#rawdata_date").val()));
+	//console.log(getEndDateTimeRange($("#rawdata_date").val()));
 	clearContainer();
 	addTips([]);
 	getRawdataView();
@@ -166,8 +170,8 @@ $(document).ready(function() {
     
     function schema_button_function(e)
     {
-	console.log(getStartDateTimeRange($("#rawdata_date").val()));
-	console.log(getEndDateTimeRange($("#rawdata_date").val()));
+	//console.log(getStartDateTimeRange($("#rawdata_date").val()));
+	//console.log(getEndDateTimeRange($("#rawdata_date").val()));
 	clearContainer();
 	getSchema();
     }
@@ -191,7 +195,6 @@ $(document).ready(function() {
     function getSpeech(options, num_to_skip)
     {
 	console.log("in getSpeech:"+options.uname);
-	console.log(auth_token);
 	parameters = getParameters(stream_id = summarizerId,
 		      stream_version = summarizerStreamVersion,
 		      username = options.uname,
@@ -209,7 +212,6 @@ $(document).ready(function() {
     function getSpeech_old(options, num_to_skip)
     {
 	console.log("in getSpeech_old");
-	console.log(auth_token);
 	parameters = getParameters(stream_id = classifierId,
 		      stream_version = classifierStreamVersion,
 		      username = $("#single_userList").val(),
@@ -430,6 +432,7 @@ $(document).ready(function() {
 	{
 	    batteryArray = new Array();
 	    locationArray = new Array();
+	    markers = [];
 	}
 	
 	var frameNo;
@@ -532,7 +535,6 @@ $(document).ready(function() {
 
 	var tbody = $("#view_table").find("tbody");	
 	var frameNo;
-	console.log(response)
 	rawdataSize += response.metadata.count;
 	updateRawdataTip();
 	for(var i=0; i<response.data.length; i++)
@@ -665,7 +667,19 @@ function plotSpeech(options)
 	    renderTo: $mycontainer[0],
 	    type: 'column',
     	    zoomType : 'x',
-	    borderWidth: 1
+	    borderWidth: 1,
+	    events : {
+		selection: function(event) {
+		    if(!event.xAxis)
+		    {
+			resetMarkers();
+		    }
+		    else
+		    {
+			selectMarkers(event.xAxis[0].min, event.xAxis[0].max);
+		    }
+		}
+	    }
 	},
 	credits:{enabled:false},
 	plotOptions: {
@@ -934,10 +948,9 @@ function plotLocation(options)
           mapTypeId: google.maps.MapTypeId.ROADMAP
         };
 	
-    var map = new google.maps.Map(document.getElementById("map_canvas"),
+    map = new google.maps.Map(document.getElementById("map_canvas"),
             mapOptions);
         
-    var markers = [];
     var bounds = new google.maps.LatLngBounds();
     var icons = {};
     icons['speech'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png");
@@ -951,9 +964,11 @@ function plotLocation(options)
 	markers.push(createMarker(options, map, location, bounds, icons));
     }
     map.fitBounds(bounds);
-    var markerCluster = new MarkerClusterer(map,
+    
+    markerCluster = new MarkerClusterer(map,
 					    markers,
-					    {gridSize: 30,
+					    {gridSize: 20,
+					    ignoreHidden: true,
 					    calculator: function(markers, numStyles) {
 						// Custom style can be returned here
 						return {
@@ -971,6 +986,7 @@ function plotLocation(options)
 				    });
 				    infoWindow.open(map);
 				});
+				
 
 }
 
@@ -1062,6 +1078,7 @@ function createMarker(options, map, location, bounds, icons)
     });
     
     marker['mode'] = mode;
+    marker['frameNo'] = location[1].frameNo;
     return marker;
 }
 
@@ -1085,6 +1102,32 @@ function getClusterText(markers)
 	'<b>Pending Points:\t</b>' + zeroIfNAN(summary['pending']) + '<br/>' +
 	'</div>';
     return contentString;
+}
+
+function resetMarkers()
+{
+    for(index in markers)
+    {
+	markers[index].setVisible(true);
+    }
+    markerCluster.repaint();
+}
+
+function selectMarkers(start, end)
+{
+    for(index in markers)
+    {
+	current = markers[index].frameNo;
+	if(current >= start && current <= end)
+	{
+	    markers[index].setVisible(true);
+	}
+	else
+	{
+	    markers[index].setVisible(false);
+	}
+	markerCluster.repaint();
+    }
 }
 
 function getParameters(stream_id, stream_version, username, start_date, end_date)
@@ -1137,7 +1180,6 @@ function getMoreData(response, dataFun, options)
 
 function isFirstResult(response)
 {
-    console.log(response);
     if(response.metadata == undefined)
     {
 	return true;
@@ -1197,6 +1239,8 @@ function clearContainer()
 {
     $("#container").empty();
     charts = [];
+    map = null;
+    markerCluster = null;
     speechReady = false;
 }
 
