@@ -1003,7 +1003,7 @@ function pushToSpeechArray(timestamp, uname, speech, silent, missing)
         speechMap[uname][timestamp] = 'missing';
 }
 
-function waitForSpeech(funct, options)
+function waitForSpeech(func, options)
 {
     if (!speechReady)
     {
