@@ -3,3 +3,9 @@
     table-layout: fixed;
     word-wrap: break-word;
 }
+
+.close {
+    float: right;
+    color: #f00;
+    cursor:pointer;
+}

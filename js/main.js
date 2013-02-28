@@ -22,6 +22,8 @@ var batteryArray;
 var locationArray;
 var rawdataArray;
 
+var infoWindow;
+
 $(document).ready(function() {
     auth_token = oh.getCookie("auth_token");
     name = oh.getCookie("name");
@@ -30,6 +32,7 @@ $(document).ready(function() {
     charts = new Array();
     dashboardArray = new Array();
     speechArray = new Array();
+    speechMap = new Array();
     secondArray = new Array();
     batteryArray = new Array();
     locationArray = new Array();
@@ -105,7 +108,7 @@ $(document).ready(function() {
 		  start: getStartDateTime($("#single_date").val()),
 		  end: getEndDateTime($("#single_date").val()),
 		  outerElement : getOuterElement()});
-	getSensors(options = {nextFun : plotSensor, outerElement : getOuterElement()});
+	getSensors(options = {nextFun : plotSensor,  uname: $("#single_userList").val(), outerElement : getOuterElement()});
 	getEvents(options = {outerElement : getOuterElement()});
     }
     
@@ -349,6 +352,7 @@ $(document).ready(function() {
 	    speechArray[options.uname]["silent"] = new Array();
 	    speechArray[options.uname]["missing"] = new Array();
 	    speechArray[options.uname]["count"] = new Array();
+	    speechMap[options.uname] = {};
 	}
 	
 	var frameNo;
@@ -443,6 +447,7 @@ $(document).ready(function() {
 	for(var i=0; i<response.data.length; i++)
 	{
 	    batteryArray.push([response.data[i].data.frameNo, response.data[i].data.Battery.percent]);
+	    response.data[i].metadata.location['frameNo'] = response.data[i].data.frameNo;
 	    locationArray.push([response.data[i].data.frameNo, response.data[i].metadata.location]);
 	}
 
@@ -874,8 +879,8 @@ function plotSensor(options)
 
 function plotSensor_real(options)
 {
-    plotBattery(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
     plotLocation(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
+    plotBattery(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
 }
 
 function plotBattery(options)
@@ -934,7 +939,6 @@ function plotLocation(options)
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-map");
     $mycontainer.attr('id','map_canvas');
-    //$mycontainer.attr('class','span12');
     options.outerElement.append($mycontainer);
     
     var mapOptions = {
@@ -947,26 +951,38 @@ function plotLocation(options)
         
     var markers = [];
     var bounds = new google.maps.LatLngBounds();
+    var icons = {};
+    icons['speech'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png");
+    icons['silent'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/orange-dot.png");
+    icons['missing'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png");
+    icons['pending'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/ltblue-dot.png");
+    
     for (var i = 0; i < locationArray.length; i++)
     {
         var location = locationArray[i]
-	var pos = new google.maps.LatLng(location[1].latitude, location[1].longitude);
-        bounds.extend(pos);
-        var marker = new google.maps.Marker({
-            position: pos,
-            title: new Date(location[1].frameNo).toDateString(),
-        });
-	/*
-	marker.info = new google.maps.InfoWindow({
-	    content: '<b>Speed:</b> '  + ' knots'
-	  });
-	google.maps.event.addListener(marker, 'click', function() {
-	    marker.info.open(map, marker);
-	  });*/
-	markers.push(marker);
+	markers.push(createMarker(options, map, location, bounds, icons));
     }
     map.fitBounds(bounds);
-    var markerCluster = new MarkerClusterer(map, markers, {gridSize: 30,});
+    var markerCluster = new MarkerClusterer(map,
+					    markers,
+					    {gridSize: 30,
+					    calculator: function(markers, numStyles) {
+						// Custom style can be returned here
+						return {
+						    text: markers.length,
+						    index: 2
+						};
+					    }});
+    google.maps.event.addListener(markerCluster,
+				'mouseover',
+				function(cluster) {
+				    resetInfoWindow();
+				    infoWindow = new google.maps.InfoWindow({
+					content: getClusterText(cluster.getMarkers()),
+					position: cluster.getCenter()
+				    });
+				    infoWindow.open(map);
+				});
 
 }
 
@@ -975,6 +991,12 @@ function pushToSpeechArray(timestamp, uname, speech, silent, missing)
     speechArray[uname]["speech"].push([timestamp, speech]);
     speechArray[uname]["silent"].push([timestamp, silent]);
     speechArray[uname]["missing"].push([timestamp, missing]);
+    if(speech > 0)
+	speechMap[uname][timestamp] = 'speech';
+    else if(silent>0)
+        speechMap[uname][timestamp] = 'silent';
+    else
+        speechMap[uname][timestamp] = 'missing';
 }
 
 function waitForSpeech(funct, options)
@@ -1006,15 +1028,75 @@ function getSpeechArrayData(dataArray, type)
     }
     for(var index in  dataArray)
     {
-	//console.log();
-	//console.log(dataArray[index].timestamp);
-	//return [];
 	if(dataArray[index].hasSpeech)
 	    ret.push([index, type0]);
 	else
 	    ret.push([index, type1]);
     }
     return ret;
+}
+
+function createMarker(options, map, location, bounds, icons)
+{
+    var pos = new google.maps.LatLng(location[1].latitude, location[1].longitude);
+    bounds.extend(pos);
+    markerOptions = {};
+    
+    baseTS = getBase(location[1].frameNo);
+    var mode = speechMap[options.uname][baseTS];
+    if(mode == undefined)
+    {
+	mode = "pending";
+    }
+    markerOptions.icon = icons[mode];
+    
+    var marker = new google.maps.Marker({
+	map: map,
+	position: pos,
+	icon : icons[mode]
+    });
+    var contentString = '<div id="content">'+
+	'<h4 id="firstHeading" class="firstHeading">'+new Date(location[1].frameNo).toLocaleString()+'</h4>'+
+	'<div id="bodyContent">'+
+	'<b>Mode:</b>' + mode + '<br/>' +
+	'<b>Coordinates:</b>' + location[1].latitude + ',' +  location[1].longitude + '<br/>' +
+	'<b>Accuracy:</b>' + location[1].accuracy + '<br/>' +
+	'<b>Provider:</b>' + location[1].provider +
+	'</div>'+
+	'</div>';
+    
+    google.maps.event.addListener(marker, 'mouseover', function() {
+	resetInfoWindow();
+	infoWindow = new google.maps.InfoWindow({
+	    content: contentString
+	});
+	infoWindow.open(map,marker);
+    });
+    
+    marker['mode'] = mode;
+    return marker;
+}
+
+function getClusterText(markers)
+{
+    var summary = {};
+    for(index in markers)
+    {
+	temp = summary[markers[index]['mode']];
+	if(temp == undefined)
+	{
+	    temp = 0;
+	}
+	summary[markers[index]['mode']] = temp+1;
+    }
+    var contentString = '<div id="content">'+
+	'<p>There are <b>' + zeroIfNAN(markers.length) + '</b> points in this cluster</p>' +
+	'<b>Points with Speech:\t</b>' + zeroIfNAN(summary['speech']) + '<br/>' +
+	'<b>Points without Speech:\t</b>' + zeroIfNAN(summary['silent'] )+ '<br/>' +
+	'<b>Missing Points:\t</b>' + zeroIfNAN(summary['missing']) + '<br/>' +
+	'<b>Pending Points:\t</b>' + zeroIfNAN(summary['pending']) + '<br/>' +
+	'</div>';
+    return contentString;
 }
 
 function getParameters(stream_id, stream_version, username, start_date, end_date)
@@ -1098,6 +1180,12 @@ function clearContainer()
     speechReady = false;
 }
 
+function resetInfoWindow()
+{
+    if(infoWindow != undefined)
+	infoWindow.close();
+}
+
 function isMoreDataPresent(response)
 {
     if((response.metadata != undefined) && (response.metadata.count >= maximumRecords) && !(typeof(response.metadata.next) == undefined))
@@ -1156,6 +1244,20 @@ function pad(number, length)
     return str
 }
 
+function zeroIfNAN(input)
+{
+    if(input == undefined)
+	return 0;
+    return input;
+}
+
+function getBase(frameNo)
+{
+    date = new Date(frameNo);
+    date.setMilliseconds(0);
+    date.setSeconds(0);
+    return date.getTime();
+}
 
 function getURLParameter(url, name)
 {
