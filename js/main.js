@@ -1126,8 +1126,8 @@ function selectMarkers(start, end)
 	{
 	    markers[index].setVisible(false);
 	}
-	markerCluster.repaint();
     }
+    markerCluster.repaint();
 }
 
 function getParameters(stream_id, stream_version, username, start_date, end_date)
