@@ -38,6 +38,7 @@ $(document).ready(function() {
     locationArray = new Array();
     rawdataArray = new Array();
     speechReady = false;
+    rawdataSize = 0;
     
     oh.call("/class/read", {
         auth_token : auth_token,
@@ -150,6 +151,7 @@ $(document).ready(function() {
 	console.log(getStartDateTimeRange($("#rawdata_date").val()));
 	console.log(getEndDateTimeRange($("#rawdata_date").val()));
 	clearContainer();
+	addTips([]);
 	getRawdataDump();
     }
     
@@ -158,6 +160,7 @@ $(document).ready(function() {
 	console.log(getStartDateTimeRange($("#rawdata_date").val()));
 	console.log(getEndDateTimeRange($("#rawdata_date").val()));
 	clearContainer();
+	addTips([]);
 	getRawdataView();
     }
     
@@ -250,7 +253,7 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
 
-    function getRawdataDump(num_to_skip)
+    function getRawdataDump(options, num_to_skip)
     {
 	parameters = getParameters(stream_id = classifierId,
 		      stream_version = classifierStreamVersion,
@@ -269,7 +272,7 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
-    function getRawdataView(num_to_skip)
+    function getRawdataView(oprions, num_to_skip)
     {
 	parameters = getParameters(stream_id = classifierId,
 		      stream_version = classifierStreamVersion,
@@ -497,9 +500,12 @@ $(document).ready(function() {
 	{
 	    console.log("in first result");
 	    rawdataArray.length = 0;
+	    rawdataSize = 0;
 	}
 	
 	rawdataArray = rawdataArray.concat(response.data);
+	rawdataSize += response.metadata.count;
+	updateRawdataTip();
 	if(isMoreDataPresent(response))
 	{
 	    getMoreData(response = response, dataFun = getRawdataDump);
@@ -521,10 +527,14 @@ $(document).ready(function() {
 	    $mycontainer.addClass("span12");
 	    $("#container").append($mycontainer);
 	    $mycontainer.find("table").attr('id','view_table');
+	    rawdataSize = 0;
 	}
 
 	var tbody = $("#view_table").find("tbody");	
 	var frameNo;
+	console.log(response)
+	rawdataSize += response.metadata.count;
+	updateRawdataTip();
 	for(var i=0; i<response.data.length; i++)
 	{
 	    var trow = $("<tr>");
@@ -1127,6 +1137,7 @@ function getMoreData(response, dataFun, options)
 
 function isFirstResult(response)
 {
+    console.log(response);
     if(response.metadata == undefined)
     {
 	return true;
@@ -1164,12 +1175,22 @@ function addTips(strings)
     var $mycontainer = $(".template-tip").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-tip");
+    $mycontainer.addClass("tip");
     $("#container").append($mycontainer);
     
     for(index in strings)
     {
 	$mycontainer.find('ul').append($("<li></li>").html(strings[index]));;
     }
+}
+
+function updateRawdataTip()
+{
+    var $mycontainer = $("#container").find('.tip').find('ul');
+    $mycontainer.html('');
+    $mycontainer.append($("<li></li>").html('<b>Number of loaded rows (estimated): </b>' + rawdataSize));
+    $mycontainer.append($("<li></li>").html('If the above counter does not change for more than a minute, the request may have failed'));
+    $mycontainer.append($("<li></li>").html('In such a situation, try again later or contact the webmaster'));
 }
 
 function clearContainer()
