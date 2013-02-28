@@ -89,11 +89,13 @@ $(document).ready(function() {
     function dashboard_button_function(e)
     {
 	clearContainer();
+	addTips(["Select a time range in the graph to zoom in",
+		 "Click on 'Number of Samples per hour' to get information about the number of data points uploaded in an hour"]);
 	for(index  in userList)
 	{
 	    options = {uname : userList[index],
 		    nextFun : plotDashboard,
-		    outerElement : getOuterElement()};
+		    outerElement : getOuterElement(title="Summary for user '"+userList[index]+"'")};
 	    getDashboardData(options=options);
 	}
     }
@@ -103,13 +105,22 @@ $(document).ready(function() {
 	//console.log(getStartDateTime($('#single_date').val()));
 	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
+	uname = $("#single_userList").val();
+	addTips(["Select a time range in the Dail Summary graph to zoom in",
+		 "Hover over points in the map to get more details about the point/cluster of points",
+		 "In the map, Speech points are green in color, non-speech points are orange in color",
+		 "Blue points in the map stand for pending points. Pending points stand for points which are still being processed. Kindly check after sometime to view those points as well",
+		 "The list of events log major events related to the app, such as the app being started/stopped, the phone rebooting and the app crashing",
+		 "The charts may take a few seconds to load, kindly be patient"]);
 	getSpeech(options = {nextFun : plotSpeech,
-		  uname: $("#single_userList").val(),
-		  start: getStartDateTime($("#single_date").val()),
-		  end: getEndDateTime($("#single_date").val()),
-		  outerElement : getOuterElement()});
-	getSensors(options = {nextFun : plotSensor,  uname: $("#single_userList").val(), outerElement : getOuterElement()});
-	getEvents(options = {outerElement : getOuterElement()});
+		    uname: uname,
+		    start: getStartDateTime($("#single_date").val()),
+		    end: getEndDateTime($("#single_date").val()),
+		    outerElement : getOuterElement(title="Daily Summary for "+uname)});
+	getSensors(options = {nextFun : plotSensor,
+		    uname: uname,
+		    outerElementArr : [getOuterElement(title = "Map"), getOuterElement(title = "Battery Graphs")]});
+	getEvents(options = {outerElement : getOuterElement(title = "List of Events")});
     }
     
     function compare_button_function(e)
@@ -117,45 +128,20 @@ $(document).ready(function() {
 	//console.log(getStartDateTime($('#single_date').val()));
 	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
-	if($("#compare_userList1").val() != "None")
+	addTips(["Select a time range in the graph to zoom in",
+		 "The x-axis scaling of all the graphs are synchronized",
+		 "There might be a small delay after selecting a range, please be patient"]);
+	for(i=1; i<=5; i++)
 	{
-	    getSpeech(options = {nextFun : plotSpeech_compare,
-				uname: $("#compare_userList1").val(),
-				start: getStartDateTime($("#compare_date").val()),
-				end: getEndDateTime($("#compare_date").val()),
-				outerElement : getOuterElement()});
-	}
-	if($("#compare_userList2").val() != "None")
-	{
-	    getSpeech(options = {nextFun : plotSpeech_compare,
-				uname: $("#compare_userList2").val(),
-				start: getStartDateTime($("#compare_date").val()),
-				end: getEndDateTime($("#compare_date").val()),
-				outerElement : getOuterElement()});
-	}
-	if($("#compare_userList3").val() != "None")
-	{
-	    getSpeech(options = {nextFun : plotSpeech_compare,
-				uname: $("#compare_userList3").val(),
-				start: getStartDateTime($("#compare_date").val()),
-				end: getEndDateTime($("#compare_date").val()),
-				outerElement : getOuterElement()});
-	}
-	if($("#compare_userList4").val() != "None")
-	{
-	    getSpeech(options = {nextFun : plotSpeech_compare,
-				uname: $("#compare_userList4").val(),
-				start: getStartDateTime($("#compare_date").val()),
-				end: getEndDateTime($("#compare_date").val()),
-				outerElement : getOuterElement()});
-	}
-	if($("#compare_userList5").val() != "None")
-	{
-	    getSpeech(options = {nextFun : plotSpeech_compare,
-				uname: $("#compare_userList5").val(),
-				start: getStartDateTime($("#compare_date").val()),
-				end: getEndDateTime($("#compare_date").val()),
-				outerElement : getOuterElement()});
+	    if($("#compare_userList"+i).val() != "None")
+	    {
+		uname = $("#compare_userList"+i).val();
+		getSpeech(options = {nextFun : plotSpeech_compare,
+				    uname: uname,
+				    start: getStartDateTime($("#compare_date").val()),
+				    end: getEndDateTime($("#compare_date").val()),
+				    outerElement : getOuterElement(title="Daily Summary for "+uname)});
+	    }
 	}
     }
     
@@ -469,7 +455,6 @@ $(document).ready(function() {
 	    var $mycontainer = $(".template-event-table").clone();
 	    $mycontainer.removeAttr("style");
 	    $mycontainer.removeClass("template-event-table");
-	    $mycontainer.addClass("span12");
 	    options.outerElement.append($mycontainer);
 	    $mycontainer.find("table").attr('id','view_table');
 	}
@@ -571,7 +556,6 @@ $(document).ready(function() {
 	$("#container").append($mycontainer);
 
 	$("#schema-text").find("pre").text(JSON.stringify(response.data, undefined, 2));
-	//console.log(JSON.stringify(response.data, undefined, 2));
     }
 
 
@@ -601,9 +585,7 @@ function plotDashboard(options)
 		shadow: false
 	  }
 	},
-	title: {
-	    text: 'Summary for user \'' + options.uname +'\''
-	},
+	title: false,
 	xAxis: {
 	    type: 'datetime',
 	    minRange: 12 * 3600 * 1000,
@@ -688,9 +670,7 @@ function plotSpeech(options)
 		shadow: false
 	  }
 	},
-	title: {
-	    text: 'Temporal Summary for ' +options.uname
-	},
+	title: false,
 	xAxis: {
 	    type: 'datetime',
 	    minRange: 1800 * 1000,
@@ -772,9 +752,7 @@ function plotSpeech_compare(options)
 		shadow: false
 	  }
 	},
-	title: {
-	    text: 'Temporal Summary for ' +options.uname
-	},
+	title: false,
 	xAxis: {
 	    type: 'datetime',
 	    min : new Date(addTimeZone(options.start)).getTime(),
@@ -879,8 +857,8 @@ function plotSensor(options)
 
 function plotSensor_real(options)
 {
-    plotLocation(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
-    plotBattery(jQuery.extend(options, {outerElement: getOuterElement(options.outerElement)}));
+    plotLocation(jQuery.extend(options, {outerElement: options.outerElementArr[0]}));
+    plotBattery(jQuery.extend(options, {outerElement: options.outerElementArr[1]}));
 }
 
 function plotBattery(options)
@@ -1162,15 +1140,36 @@ function isFirstResult(response)
     }
 }
 
-function getOuterElement(outerElement)
+function getOuterElement(title, outerElement)
 {
     var $mycontainer = $(".template-outer").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-outer");
+    $mycontainer.addClass("outerDiv");
     if(outerElement == null)
         outerElement = $("#container");
-    outerElement.append($mycontainer);    
+    outerElement.append($mycontainer);
+    
+    $mycontainer.find('.outerDiv-head').find('h4').text(title);
+    
+    $(".outerDiv .closeButton").click(function(){
+	$(this).parents(".outerDiv").animate({ opacity: "hide" }, "fast");
+    });
+    
     return $mycontainer;
+}
+
+function addTips(strings)
+{
+    var $mycontainer = $(".template-tip").clone();
+    $mycontainer.removeAttr("style");
+    $mycontainer.removeClass("template-tip");
+    $("#container").append($mycontainer);
+    
+    for(index in strings)
+    {
+	$mycontainer.find('ul').append($("<li></li>").html(strings[index]));;
+    }
 }
 
 function clearContainer()
