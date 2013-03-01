@@ -74,13 +74,27 @@ $(document).ready(function() {
     $('#dashboard_button').button();
     $("#dashboard_button").on("click", dashboard_button_function);
     
+    /*
     $('#single_date').datepicker({format: 'mm-dd-yyyy'});
     $('#single_date').datepicker('setValue',new Date());
     $('#single_button').button();
     $("#single_button").on("click", single_button_function);
+    */
     
+    $('#single_date').daterangepicker({startDate: Date.today(), endDate: Date.today()});
+    $('#single_date').val(Date.today().toString('MM/dd/yyyy') + ' - ' + Date.today().toString('MM/dd/yyyy'));
+    $('#single_button').button();
+    $("#single_button").on("click", single_button_function);
+    
+    /*
     $('#compare_date').datepicker({format: 'mm-dd-yyyy'});
     $('#compare_date').datepicker('setValue',new Date());
+    $('#compare_button').button();
+    $("#compare_button").on("click", compare_button_function);
+    */
+    
+    $('#compare_date').daterangepicker({startDate: Date.today(), endDate: Date.today()});
+    $('#compare_date').val(Date.today().toString('MM/dd/yyyy') + ' - ' + Date.today().toString('MM/dd/yyyy'));
     $('#compare_button').button();
     $("#compare_button").on("click", compare_button_function);
     
@@ -107,25 +121,30 @@ $(document).ready(function() {
     
     function single_button_function(e)
     {
-	//console.log(getStartDateTime($('#single_date').val()));
-	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
 	uname = $("#single_userList").val();
-	addTips(["Select a time range in the Dail Summary graph to zoom in. The markers on the mpa are updated as well",
+	start = getStartDateTimeRange($('#single_date').val());
+	end = getEndDateTimeRange($('#single_date').val());
+	addTips(["Select a time range in the Summary graph to zoom in. The markers on the map are updated as well",
 		 "Hover over points in the map to get more details about the point/cluster of points",
 		 "In the map, Speech points are green in color, non-speech points are orange in color",
 		 "Blue points in the map stand for pending points. Pending points stand for points which are still being processed. Kindly check after sometime to view those points as well",
 		 "The 'List of events' logs major events related to the app, such as the app being started/stopped, the phone rebooting and the app crashing",
-		 "The charts may take a few seconds to load, kindly be patient"]);
+		 "The charts may take a few seconds to load, kindly be patient (Multiple days take longer)"]);
 	getSpeech(options = {nextFun : plotSpeech,
 		    uname: uname,
-		    start: getStartDateTime($("#single_date").val()),
-		    end: getEndDateTime($("#single_date").val()),
+		    start: start,
+		    end: end,
 		    outerElement : getOuterElement(title="Daily Summary for "+uname)});
 	getSensors(options = {nextFun : plotSensor,
 		    uname: uname,
+		    start: start,
+		    end: end,
 		    outerElementArr : [getOuterElement(title = "Map"), getOuterElement(title = "Battery Graphs")]});
-	getEvents(options = {outerElement : getOuterElement(title = "List of Events")});
+	getEvents(options = {uname: uname,
+		    start: start,
+		    end: end,
+		    outerElement : getOuterElement(title = "List of Events")});
     }
     
     function compare_button_function(e)
@@ -133,6 +152,8 @@ $(document).ready(function() {
 	//console.log(getStartDateTime($('#single_date').val()));
 	//console.log(getEndDateTime($('#single_date').val()));
 	clearContainer();
+	start = getStartDateTimeRange($('#compare_date').val());
+	end = getEndDateTimeRange($('#compare_date').val());
 	addTips(["Select a time range in the graph to zoom in",
 		 "The x-axis scaling of all the graphs are synchronized",
 		 "There might be a small delay after selecting a range, please be patient"]);
@@ -143,8 +164,8 @@ $(document).ready(function() {
 		uname = $("#compare_userList"+i).val();
 		getSpeech(options = {nextFun : plotSpeech_compare,
 				    uname: uname,
-				    start: getStartDateTime($("#compare_date").val()),
-				    end: getEndDateTime($("#compare_date").val()),
+				    start: start,
+				    end: end,
 				    outerElement : getOuterElement(title="Daily Summary for "+uname)});
 	    }
 	}
@@ -229,9 +250,9 @@ $(document).ready(function() {
       {
 	parameters = getParameters(stream_id = sensorId,
 		      stream_version = sensorStreamVersion,
-		      username = $("#single_userList").val(),
-		      start_date = getStartDateTime($("#single_date").val()),
-		      end_date = getEndDateTime($("#single_date").val()));
+		      username = options.uname,
+		      start_date = options.start,
+		      end_date = options.end);
 	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
 	getData(address = "/stream/read",
 		parameters = parameters,
@@ -244,9 +265,9 @@ $(document).ready(function() {
     {
 	parameters = getParameters(stream_id = eventId,
 		      stream_version = eventStreamVersion,
-		      username = $("#single_userList").val(),
-		      start_date = getStartDateTime($("#single_date").val()),
-		      end_date = getEndDateTime($("#single_date").val()));
+		      username = options.uname,
+		      start_date = options.start,
+		      end_date = options.end);
 	addToParametersIfNotEmpty(parameters, "num_to_skip", num_to_skip);
 	getData(address = "/stream/read",
 		parameters = parameters,
