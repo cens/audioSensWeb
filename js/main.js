@@ -651,6 +651,7 @@ function plotDashboard(options)
 	series: [{
 	    name: 'Minutes with missing data',
 	    type: 'column',
+	    color: '#BDBDBD',
 	    data:  dashboardArray[options.uname]["count_missing"]
 	}, {
 	    name: 'Speech minutes',
@@ -745,6 +746,7 @@ function plotSpeech(options)
 	    data: speechArray[options.uname]["silent"]
 	}, {
 	    name: 'Missing points',
+	    color: '#BDBDBD',
 	    data: speechArray[options.uname]["missing"]
 	}]
     });
@@ -829,6 +831,7 @@ function plotSpeech_compare(options)
 	    data: speechArray[options.uname]["silent"]
 	}, {
 	    name: 'Missing points',
+	    color: '#BDBDBD',
 	    data: speechArray[options.uname]["missing"]
 	}]
     });
