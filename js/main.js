@@ -1010,8 +1010,6 @@ function plotLocation(options)
 				    });
 				    infoWindow.open(map);
 				});
-				
-
 }
 
 function pushToSpeechArray(timestamp, uname, speech, silent, missing)

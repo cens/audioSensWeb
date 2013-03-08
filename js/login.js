@@ -10,7 +10,9 @@ $(document).ready(function() {
 	
 		var user = $("#user").val();
 		var password = $("#password").val();
-		                
+		var server = $("#server").val();
+		oh.setCookie("server", server);
+
 		oh.login(user, password, function(response){
                         oh.setCookie("auth_token",response.token);
 			oh.setCookie("user",user);			

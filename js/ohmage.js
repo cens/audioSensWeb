@@ -23,7 +23,12 @@ oh.call = function(path, data, datafun, options){
 	
 	//default parameter
 	data.client = "audiosens-viz"
-		
+	savedServer = oh.getCookie("server");
+	if(savedServer != undefined && savedServer.trim().length > 0)
+	{
+		ohmageServerUrl = savedServer.trim();
+	}
+	
 	var myrequest = $.ajax({
 		type: "POST",
 		url : ohmageServerUrl + "/app" + path,
