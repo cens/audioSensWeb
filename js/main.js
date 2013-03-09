@@ -26,6 +26,7 @@ var infoWindow;
 var markers;
 var map;
 var markerCluster;
+var quickload;
 
 $(document).ready(function() {
     auth_token = oh.getCookie("auth_token");
@@ -41,6 +42,7 @@ $(document).ready(function() {
     locationArray = new Array();
     rawdataArray = new Array();
     speechReady = false;
+    quickload = false;
     rawdataSize = 0;
     markers = [];
     
@@ -122,6 +124,7 @@ $(document).ready(function() {
     function single_button_function(e)
     {
 	clearContainer();
+	quickload = $("#single_quickmode").is(':checked');
 	uname = $("#single_userList").val();
 	start = getStartDateTimeRange($('#single_date').val());
 	end = getEndDateTimeRange($('#single_date').val());
@@ -129,6 +132,7 @@ $(document).ready(function() {
 		 "Hover over points in the map to get more details about the point/cluster of points",
 		 "In the map, Speech points are green in color, non-speech points are orange in color",
 		 "Blue points in the map stand for pending points. Pending points stand for points which are still being processed. Kindly check after sometime to view those points as well",
+		 "The map summary lists all locations with more than 5 continuous points",
 		 "The 'List of events' logs major events related to the app, such as the app being started/stopped, the phone rebooting and the app crashing",
 		 "The charts may take a few seconds to load, kindly be patient (Multiple days take longer)"]);
 	getSpeech(options = {nextFun : plotSpeech,
@@ -140,7 +144,7 @@ $(document).ready(function() {
 		    uname: uname,
 		    start: start,
 		    end: end,
-		    outerElementArr : [getOuterElement(title = "Map"), getOuterElement(title = "Battery Graphs")]});
+		    outerElementArr : [getOuterElement(title = "Map"), getOuterElement(title = "Map Summary"), getOuterElement(title = "Battery Graphs")]});
 	getEvents(options = {uname: uname,
 		    start: start,
 		    end: end,
@@ -332,7 +336,7 @@ $(document).ready(function() {
 	    dashboardArray[options.uname]["count_total"] = new Array();
 	    dashboardArray[options.uname]["count_missing"] = new Array();
 	    dashboardArray[options.uname]["count_speech"] = new Array();
-	    dashboardArray[options.uname]["count_silent"] = new Array();
+	    dashboardArray[options.uname]["count_nonspeech"] = new Array();
 	    dashboardArray[options.uname]["end"] = new Array();
 	}
 	
@@ -341,7 +345,7 @@ $(document).ready(function() {
 	    dashboardArray[options.uname]["count_total"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_total]);
 	    dashboardArray[options.uname]["count_missing"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_missing]);
 	    dashboardArray[options.uname]["count_speech"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_speech]);
-	    dashboardArray[options.uname]["count_silent"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_silent]);
+	    dashboardArray[options.uname]["count_nonspeech"].push([response.data[i].data.frameNo, response.data[i].data.summary.count_silent]);
 	    dashboardArray[options.uname]["end"].push([response.data[i].data.frameNo, response.data[i].data.summary.end]);
 	}
 
@@ -361,7 +365,7 @@ $(document).ready(function() {
 	{
 	    speechArray[options.uname] = new Array();
 	    speechArray[options.uname]["speech"] = new Array();
-	    speechArray[options.uname]["silent"] = new Array();
+	    speechArray[options.uname]["nonspeech"] = new Array();
 	    speechArray[options.uname]["missing"] = new Array();
 	    speechArray[options.uname]["count"] = new Array();
 	    speechMap[options.uname] = {};
@@ -470,7 +474,6 @@ $(document).ready(function() {
 	}
 	else
 	{
-	    //console.log(locationArray);
 	    options.nextFun(options = options);
 	}
     }
@@ -483,10 +486,10 @@ $(document).ready(function() {
 	    $mycontainer.removeAttr("style");
 	    $mycontainer.removeClass("template-event-table");
 	    options.outerElement.append($mycontainer);
-	    $mycontainer.find("table").attr('id','view_table');
+	    $mycontainer.find("table").attr('id','event_table');
 	}
 
-	var tbody = $("#view_table").find("tbody");	
+	var tbody = $("#event_table").find("tbody");	
 	var frameNo;
 	for(var i=0; i<response.data.length; i++)
 	{
@@ -600,7 +603,7 @@ function plotDashboard(options)
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
     options.outerElement.append($mycontainer);
-    
+        
     var chart = new Highcharts.Chart({
 	chart: {
 	    renderTo: $mycontainer[0],
@@ -662,7 +665,7 @@ function plotDashboard(options)
 	    name: 'Non-speech minutes',
 	    type: 'column',
 	    color: '#FDC086',
-	    data:  dashboardArray[options.uname]["count_silent"]
+	    data:  dashboardArray[options.uname]["count_nonspeech"]
 	},{
 	    name: 'Number of Sample per hour',
 	    type: 'line',
@@ -678,7 +681,6 @@ function plotDashboard(options)
 
 function plotSpeech(options)
 {
-    console.log("in plotSpeech");
     var $mycontainer = $(".template-chart").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
@@ -712,7 +714,7 @@ function plotSpeech(options)
 		stacking: 'percent',
 		animation: false,
 		lineWidth:0,
-		enableMouseTracking: true,
+		enableMouseTracking: !quickload,
 		shadow: false
 	  }
 	},
@@ -743,7 +745,7 @@ function plotSpeech(options)
 	}, {
 	    name: 'Non-Speech Minute',
 	    color: '#FDC086',
-	    data: speechArray[options.uname]["silent"]
+	    data: speechArray[options.uname]["nonspeech"]
 	}, {
 	    name: 'Missing points',
 	    color: '#BDBDBD',
@@ -754,7 +756,6 @@ function plotSpeech(options)
 
 function plotSpeech_compare(options)
 {
-    console.log("in plotSpeech_convert:"+new Date(addTimeZone(options.start)));
     var $mycontainer = $(".template-chart").clone();
     $mycontainer.removeAttr("style");
     $mycontainer.removeClass("template-chart");
@@ -828,7 +829,7 @@ function plotSpeech_compare(options)
 	}, {
 	    name: 'Non-Speech Minute',
 	    color: '#FDC086',
-	    data: speechArray[options.uname]["silent"]
+	    data: speechArray[options.uname]["nonspeech"]
 	}, {
 	    name: 'Missing points',
 	    color: '#BDBDBD',
@@ -906,7 +907,8 @@ function plotSensor(options)
 function plotSensor_real(options)
 {
     plotLocation(jQuery.extend(options, {outerElement: options.outerElementArr[0]}));
-    plotBattery(jQuery.extend(options, {outerElement: options.outerElementArr[1]}));
+    plotLocationSummary(jQuery.extend(options, {outerElement: options.outerElementArr[1]}));
+    plotBattery(jQuery.extend(options, {outerElement: options.outerElementArr[2]}));
 }
 
 function plotBattery(options)
@@ -978,7 +980,7 @@ function plotLocation(options)
     var bounds = new google.maps.LatLngBounds();
     var icons = {};
     icons['speech'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png");
-    icons['silent'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/orange-dot.png");
+    icons['nonspeech'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/orange-dot.png");
     icons['missing'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png");
     icons['pending'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/ltblue-dot.png");
     
@@ -1012,15 +1014,134 @@ function plotLocation(options)
 				});
 }
 
-function pushToSpeechArray(timestamp, uname, speech, silent, missing)
+function plotLocationSummary(options)
+{
+    var clustersArr = [];
+    for (var i = 0; i < locationArray.length; i++)
+    {
+        var location = locationArray[i]
+	clustersArr.push([location[1].latitude, location[1].longitude])
+    }
+    clusters = clusterfck.hcluster(clustersArr, clusterfck.EUCLIDEAN_DISTANCE, clusterfck.AVERAGE_LINKAGE, 0.001);
+    var clusterMap = generateMap(clusters);
+    var clusterDict = generateMapDict(clusters);
+    var clusterOp = [];
+    var start_cluster, end_cluster;
+    var prev_cluster = -1;
+    var count_cluster = 0;
+    var count_speech = 0;
+    var count_nonspeech = 0;
+    var count_pending = 0;
+    for (var i = 0; i < locationArray.length; i++)
+    {
+        var location = locationArray[i];
+	var current_cluster = clusterMap[location[1].latitude+","+location[1].longitude];
+	if(prev_cluster != current_cluster)
+	{
+	    if(prev_cluster!=-1)
+	    {
+		tempOp = {};
+		tempOp.start = start_cluster;
+		tempOp.end = end_cluster;
+		tempOp.count = count_cluster;
+		tempOp.cluster = clusterDict[prev_cluster];
+		tempOp.speech = count_speech;
+		tempOp.nonspeech = count_nonspeech;
+		tempOp.pending = count_pending;
+		clusterOp.push(tempOp);
+	    }
+	    prev_cluster = current_cluster;
+	    start_cluster = location[1].frameNo;
+	    end_cluster = location[1].frameNo;
+	    count_cluster = 1;
+	    count_pending = 0;
+	    count_speech = 0;
+	    count_nonspeech =0;
+	}
+	else
+	{
+	    end_cluster = location[1].frameNo;
+	    count_cluster++;
+	}
+	baseTS = getBase(location[1].frameNo);
+	var mode = speechMap[options.uname][baseTS];
+	if(mode == undefined)
+	{
+	    count_pending++;
+	}
+	else if (mode === "speech")
+	{
+	    count_speech++;
+	}
+	else if(mode === "nonspeech")
+	{
+	    count_nonspeech++;
+	}
+    }
+    if(prev_cluster!=-1)
+    {
+	tempOp = {};
+	tempOp.start = start_cluster;
+	tempOp.end = end_cluster;
+	tempOp.count = count_cluster;
+	tempOp.cluster = clusterDict[prev_cluster];
+	tempOp.speech = count_speech;
+	tempOp.nonspeech = count_nonspeech;
+	tempOp.pending = count_pending;
+	clusterOp.push(tempOp);
+    }    
+    
+    var $mycontainer = $(".template-location-table").clone();
+    $mycontainer.removeAttr("style");
+    $mycontainer.removeClass("template-location-table");
+    options.outerElement.append($mycontainer);
+    $mycontainer.find("table").attr('id','location_table');
+        
+    var tbody = $("#location_table").find("tbody");	
+    for (var i = 0; i < clusterOp.length; i++)
+    {
+	if(clusterOp[i].count<5)
+	    continue;
+	var trow = $("<tr>");
+	parseSemanticLocation(clusterOp[i], trow);
+	trow.appendTo(tbody);
+    }
+}
+
+function addLocationRow(ob, trow)
+{
+    $("<td>")
+	   .text(new Date(ob.start).toLocaleString() +" to "+ new Date(ob.end).toLocaleString())
+	   .appendTo(trow);
+    $("<td>")
+	   .text(ob.cluster_semantic)
+	   .appendTo(trow);
+    $("<td>")
+	   .text(ob.cluster)
+	   .appendTo(trow);
+    $("<td>")
+	   .text(ob.count)
+	   .appendTo(trow);
+    $("<td>")
+	   .text((ob.speech * 100 / ob.count).toFixed(2))
+	   .appendTo(trow);
+    $("<td>")
+	   .text((ob.nonspeech * 100 / ob.count).toFixed(2))
+	   .appendTo(trow);
+    $("<td>")
+	   .text((ob.pending * 100 / ob.count).toFixed(2))
+	   .appendTo(trow);
+}
+
+function pushToSpeechArray(timestamp, uname, speech, nonspeech, missing)
 {
     speechArray[uname]["speech"].push([timestamp, speech]);
-    speechArray[uname]["silent"].push([timestamp, silent]);
+    speechArray[uname]["nonspeech"].push([timestamp, nonspeech]);
     speechArray[uname]["missing"].push([timestamp, missing]);
     if(speech > 0)
 	speechMap[uname][timestamp] = 'speech';
-    else if(silent>0)
-        speechMap[uname][timestamp] = 'silent';
+    else if(nonspeech>0)
+        speechMap[uname][timestamp] = 'nonspeech';
     else
         speechMap[uname][timestamp] = 'missing';
 }
@@ -1077,27 +1198,30 @@ function createMarker(options, map, location, bounds, icons)
     markerOptions.icon = icons[mode];
     
     var marker = new google.maps.Marker({
-	map: map,
 	position: pos,
 	icon : icons[mode]
     });
-    var contentString = '<div id="content">'+
-	'<h4 id="firstHeading" class="firstHeading">'+new Date(location[1].frameNo).toLocaleString()+'</h4>'+
-	'<div id="bodyContent">'+
-	'<b>Mode:</b>' + mode + '<br/>' +
-	'<b>Coordinates:</b>' + location[1].latitude + ',' +  location[1].longitude + '<br/>' +
-	'<b>Accuracy:</b>' + location[1].accuracy + '<br/>' +
-	'<b>Provider:</b>' + location[1].provider +
-	'</div>'+
-	'</div>';
     
-    google.maps.event.addListener(marker, 'mouseover', function() {
-	resetInfoWindow();
-	infoWindow = new google.maps.InfoWindow({
-	    content: contentString
+    if(!quickload)
+    {
+	var contentString = '<div id="content">'+
+	    '<h4 id="firstHeading" class="firstHeading">'+new Date(location[1].frameNo).toLocaleString()+'</h4>'+
+	    '<div id="bodyContent">'+
+	    '<b>Mode:</b>' + mode + '<br/>' +
+	    '<b>Coordinates:</b>' + location[1].latitude + ',' +  location[1].longitude + '<br/>' +
+	    '<b>Accuracy:</b>' + location[1].accuracy + '<br/>' +
+	    '<b>Provider:</b>' + location[1].provider +
+	    '</div>'+
+	    '</div>';
+	
+	google.maps.event.addListener(marker, 'mouseover', function() {
+	    resetInfoWindow();
+	    infoWindow = new google.maps.InfoWindow({
+		content: contentString
+	    });
+	    infoWindow.open(map,marker);
 	});
-	infoWindow.open(map,marker);
-    });
+    }
     
     marker['mode'] = mode;
     marker['frameNo'] = location[1].frameNo;
@@ -1119,7 +1243,7 @@ function getClusterText(markers)
     var contentString = '<div id="content">'+
 	'<p>There are <b>' + zeroIfNAN(markers.length) + '</b> points in this cluster</p>' +
 	'<b>Points with Speech:\t</b>' + zeroIfNAN(summary['speech']) + '<br/>' +
-	'<b>Points without Speech:\t</b>' + zeroIfNAN(summary['silent'] )+ '<br/>' +
+	'<b>Points without Speech:\t</b>' + zeroIfNAN(summary['nonspeech'] )+ '<br/>' +
 	'<b>Missing Points:\t</b>' + zeroIfNAN(summary['missing']) + '<br/>' +
 	'<b>Pending Points:\t</b>' + zeroIfNAN(summary['pending']) + '<br/>' +
 	'</div>';
@@ -1152,6 +1276,54 @@ function selectMarkers(start, end)
     }
     markerCluster.repaint();
     resetInfoWindow();
+}
+
+function generateMap(clusters)
+{
+    var map = {};
+    for (var i = 0; i < clusters.length; i++)
+    {
+	addToMap(clusters[i], map, i)
+    }
+    return map;
+}
+
+function generateMapDict(clusters)
+{
+    var map = [];
+    for (var i = 0; i < clusters.length; i++)
+    {
+	map.push(clusters[i].canonical)
+    }
+    return map;
+}
+
+function addToMap(node, map, index)
+{
+    if(node)
+    {
+	map[node.canonical[0] + "," + node.canonical[1]] = index;
+	addToMap(node.left, map, index);
+	addToMap(node.right, map, index);
+    }
+}
+
+function parseSemanticLocation(ob, trow)
+{
+    var geocoder = new google.maps.Geocoder();
+    latLng = new google.maps.LatLng(ob.cluster[0], ob.cluster[1]);
+    geocoder.geocode({latLng: latLng},function(results, status) {
+	var address = "";
+	if (status == google.maps.GeocoderStatus.OK) {
+	    if (results[0])
+	    {
+		address = results[0].formatted_address;
+	    }
+	}
+	ob.cluster_semantic = address;
+	ob.cluster = ob.cluster[0] + "," + ob.cluster[1];;
+	addLocationRow(ob,trow)
+      });
 }
 
 function getParameters(stream_id, stream_version, username, start_date, end_date)

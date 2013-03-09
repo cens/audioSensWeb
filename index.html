@@ -16,6 +16,7 @@
     <script src="lib/daterangepicker/js/daterangepicker.js"> </script>
     <script src="lib/daterangepicker/js/date.js"> </script>
     <script src="lib/filesaver/js/FileSaver.js"> </script>
+    <script src="lib/clusterfck.js"> </script>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="lib/datepicker/css/datepicker.css">
@@ -111,6 +112,11 @@
                                           </span>
                                           <input type="text" class="span10" value="02-16-2012" id="single_date" >
                                         </div>
+                                    </div>
+                                    <div class="control-group">
+                                        <label class="checkbox">  
+                                          <input type="checkbox" id="single_quickmode"> Load Faster (No mouseovers)
+                                        </label> 
                                     </div>
                                     <button type="button" class="btn btn-primary" id="single_button" data-loading-text="Generating...">
                                       <i class="icon-pencil icon-white"></i>Generate Graphs</button>
@@ -294,6 +300,23 @@
             <th>Event Name</th>
             <th>Sub-event</th>
             <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="template-location-table" style="display:none">
+      <table class="my-table table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th class="span3">Time Duration</th>
+            <th class="span3">Location</th>
+            <th>Coordinates</th>
+            <th>Number of Points</th>
+            <th>% Speech</th>
+            <th>% Non-speech</th>
+            <th>% Pending</th>
           </tr>
         </thead>
         <tbody>
