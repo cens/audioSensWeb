@@ -1016,6 +1016,19 @@ function plotLocation(options)
 
 function plotLocationSummary(options)
 {
+    if(quickload)
+    {
+	options.outerElement.hide();
+	return;
+    }
+
+    var $mycontainer = $(".template-location-table").clone();
+    $mycontainer.removeAttr("style");
+    $mycontainer.removeClass("template-location-table");
+    options.outerElement.append($mycontainer);
+    $mycontainer.find("table").attr('id','location_table');        
+    var tbody = $("#location_table").find("tbody");	
+
     var clustersArr = [];
     for (var i = 0; i < locationArray.length; i++)
     {
@@ -1026,6 +1039,7 @@ function plotLocationSummary(options)
     var clusterMap = generateMap(clusters);
     var clusterDict = generateMapDict(clusters);
     var clusterOp = [];
+    var semanticCache = {};
     var start_cluster, end_cluster;
     var prev_cluster = -1;
     var count_cluster = 0;
@@ -1090,20 +1104,13 @@ function plotLocationSummary(options)
 	tempOp.pending = count_pending;
 	clusterOp.push(tempOp);
     }    
-    
-    var $mycontainer = $(".template-location-table").clone();
-    $mycontainer.removeAttr("style");
-    $mycontainer.removeClass("template-location-table");
-    options.outerElement.append($mycontainer);
-    $mycontainer.find("table").attr('id','location_table');
-        
-    var tbody = $("#location_table").find("tbody");	
+
     for (var i = 0; i < clusterOp.length; i++)
     {
 	if(clusterOp[i].count<5)
 	    continue;
 	var trow = $("<tr>");
-	parseSemanticLocation(clusterOp[i], trow);
+	parseSemanticLocation(clusterOp[i], trow , semanticCache);
 	trow.appendTo(tbody);
     }
 }
@@ -1308,22 +1315,35 @@ function addToMap(node, map, index)
     }
 }
 
-function parseSemanticLocation(ob, trow)
+function parseSemanticLocation(ob, trow, cache)
 {
     var geocoder = new google.maps.Geocoder();
     latLng = new google.maps.LatLng(ob.cluster[0], ob.cluster[1]);
-    geocoder.geocode({latLng: latLng},function(results, status) {
-	var address = "";
-	if (status == google.maps.GeocoderStatus.OK) {
-	    if (results[0])
-	    {
-		address = results[0].formatted_address;
+    ob.cluster = ob.cluster[0] + "," + ob.cluster[1];
+    if(!cache.hasOwnProperty(ob.cluster))
+    {
+	geocoder.geocode({latLng: latLng},function(results, status) {
+	    var address = "";
+	    if (status == google.maps.GeocoderStatus.OK) {
+		if (results[0])
+		{
+		    address = results[0].formatted_address;
+		    cache[ob.cluster] = address;
+		}
 	    }
-	}
-	ob.cluster_semantic = address;
-	ob.cluster = ob.cluster[0] + "," + ob.cluster[1];;
+	    else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+		address = status;
+	    }
+	    ob.cluster_semantic = address;
+	    addLocationRow(ob,trow)
+	  });
+    }
+    else
+    {
+	console.log("hello");
+	ob.cluster_semantic = cache[ob.cluster];
 	addLocationRow(ob,trow)
-      });
+    }
 }
 
 function getParameters(stream_id, stream_version, username, start_date, end_date)
