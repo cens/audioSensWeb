@@ -1,3 +1,4 @@
+//Configuration Start
 var className = "urn:class:audiosens";
 var observerId = "org.ohmage.probes.audioSensProbe";
 var sensorId = "sensors";
@@ -12,6 +13,8 @@ var classifierStreamVersion = 14;
 var summarizerStreamVersion = 14;
 var eventStreamVersion = 14;
 var maximumRecords = 2000;
+//Configuration End
+
 
 var auth_token;
 var name;
