@@ -18,7 +18,7 @@ This visualization contains more detailed graphs about a single user. Some of th
 <li>list of events related to the application state (such as application restarting, the settings being changed and the phone booting up).</li>
 </ul>
 
-<h6<Comparison between users</h6>
+<h6>Comparison between users</h6>
 This visualization shows the speech graphs for upto 6 users simulataneously. This can be useful to compare the speech patterns of related subjects (such as members of a family)
 
 <h6>Data view/download</h6>
