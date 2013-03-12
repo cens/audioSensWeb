@@ -49,6 +49,8 @@ $(document).ready(function() {
     rawdataSize = 0;
     markers = [];
     
+    
+    //Used to get users present in the class"audiosens"
     oh.call("/class/read", {
         auth_token : auth_token,
         class_urn_list : className
@@ -62,36 +64,43 @@ $(document).ready(function() {
             }
         });
     
+    //Logout Button
     $("#logout_button").on("click", function(e){
 	    oh.logout();
 	});
     
-    Highcharts.setOptions({ // This is for all plots, change Date axis to local timezone
+    //This is for all plots, change Date axis to local timezone
+    Highcharts.setOptions({
         global : {
             useUTC : false
             }
         });
     
+    //Populate all UserList DropDowns
     $(".userListNone").append($("<option />").val("None").text("None"));
     
+    //Initialize DatePicker for Ranges
     $('#dashboard_date').daterangepicker({startDate: Date.today().add({ months: -1 }), endDate: Date.today()});
     $('#dashboard_date').val(Date.today().add({ months: -1 }).toString('MM/dd/yyyy') + ' - ' + Date.today().toString('MM/dd/yyyy'));
     $('#dashboard_button').button();
     $("#dashboard_button").on("click", dashboard_button_function);
     
     /*
+    //Initialize DatePicker for a particlar day
     $('#single_date').datepicker({format: 'mm-dd-yyyy'});
     $('#single_date').datepicker('setValue',new Date());
     $('#single_button').button();
     $("#single_button").on("click", single_button_function);
     */
     
+    //Initialize DatePicker for Ranges
     $('#single_date').daterangepicker({startDate: Date.today(), endDate: Date.today()});
     $('#single_date').val(Date.today().toString('MM/dd/yyyy') + ' - ' + Date.today().toString('MM/dd/yyyy'));
     $('#single_button').button();
     $("#single_button").on("click", single_button_function);
     
     /*
+    //Initialize DatePicker for a particlar day
     $('#compare_date').datepicker({format: 'mm-dd-yyyy'});
     $('#compare_date').datepicker('setValue',new Date());
     $('#compare_button').button();
@@ -115,6 +124,8 @@ $(document).ready(function() {
 	clearContainer();
 	addTips(["Select a time range in the graph to zoom in",
 		 "Click on 'Number of Samples per hour' to get information about the number of data points uploaded in an hour"]);
+	
+	//For each user in the class, plot summaries
 	for(index  in userList)
 	{
 	    options = {uname : userList[index],
@@ -127,6 +138,7 @@ $(document).ready(function() {
     function single_button_function(e)
     {
 	clearContainer();
+	//Used for Quick Load Function
 	quickload = $("#single_quickmode").is(':checked');
 	uname = $("#single_userList").val();
 	start = getStartDateTimeRange($('#single_date').val());
@@ -204,6 +216,7 @@ $(document).ready(function() {
 	getSchema();
     }
     
+    //gets Data for the Dahboard
     function getDashboardData(options, num_to_skip)
     {
 	parameters = getParameters(stream_id = summarizerId,
@@ -220,6 +233,7 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
+    //Gets Speech data for a user for the particular date Range
     function getSpeech(options, num_to_skip)
     {
 	console.log("in getSpeech:"+options.uname);
@@ -237,6 +251,7 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
+    //Not used anymore
     function getSpeech_old(options, num_to_skip)
     {
 	console.log("in getSpeech_old");
@@ -253,6 +268,7 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
+    //Gets Data from the Sensors Observer Stream
     function getSensors(options, num_to_skip)
       {
 	parameters = getParameters(stream_id = sensorId,
@@ -268,6 +284,8 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
+    
+    //Gets Data from the Events Observer Stream
     function getEvents(options, num_to_skip)
     {
 	parameters = getParameters(stream_id = eventId,
@@ -283,6 +301,8 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
 
+
+    //Used to get Raw data and Dup the data to a file
     function getRawdataDump(options, num_to_skip)
     {
 	parameters = getParameters(stream_id = classifierId,
@@ -302,6 +322,7 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
+    //Used to get Raw data and view it in tables
     function getRawdataView(oprions, num_to_skip)
     {
 	parameters = getParameters(stream_id = classifierId,
@@ -321,6 +342,8 @@ $(document).ready(function() {
 		num_to_skip = num_to_skip);
     }
     
+    
+    //used to get the Observer Schema
     function getSchema()
     {
 	parameters = getParametersforSchema();
@@ -331,6 +354,8 @@ $(document).ready(function() {
 		dataFun = parseSchema);
     }
     
+    
+    //Parser the data for the dashboard and calls the Plotting function
     function parseDashboard(response, options)
     {
 	if(isFirstResult(response)) //first query
@@ -362,6 +387,7 @@ $(document).ready(function() {
 	}
     }
     
+    //Parser the data for the Individual User View and calls the Plotting function
     function parseSpeech(response, options)
     {
 	if(isFirstResult(response)) //first query
@@ -385,6 +411,9 @@ $(document).ready(function() {
 	    
 	    for(var j=0; j< inferenceArr.length; j++)
 	    {
+		//-1: Missing Data
+		//0: Non-speech
+		//1: Speech
 		var timestamp = frameNo + j * 60 * 1000;
 		if(inferenceArr[j] == -1)
 		    pushToSpeechArray(timestamp, options.uname, 0, 0, 1);
@@ -408,6 +437,7 @@ $(document).ready(function() {
 	}
     }
     
+    //Not used anymore
     function parseSpeech_old(response, options)
     {
 	if(isFirstResult(response)) //first query
@@ -454,6 +484,8 @@ $(document).ready(function() {
 	    options.nextFun(options = options);
 	}
     }
+    
+    //Parser the data for the Sensor graphs and calls the Plotting function
     function parseSensor(response, options)
     {
 	if(isFirstResult(response)) //first query
@@ -481,6 +513,7 @@ $(document).ready(function() {
 	}
     }
     
+    //Parses the data for the Event List and displays the events in a tabular form
     function parseEvent(response, options)
     {
 	if(isFirstResult(response)) //first query
@@ -524,6 +557,7 @@ $(document).ready(function() {
 	}
     }
     
+    //Parses the Rawdata form the Observer API and displays it in a tabular form
     function parseRawdataDump(response)
     {
 	if(isFirstResult(response)) //first query
@@ -547,6 +581,7 @@ $(document).ready(function() {
 	}
     }
     
+    //Parses the Rawdata form the Observer API and creates a file for Downloading. FileSaver.js is used to simulate downloading for a file generated in the Client. May not work on IE.
     function parseRawdataView(response)
     {
 	if(isFirstResult(response)) //first query
@@ -585,6 +620,7 @@ $(document).ready(function() {
 	}
     }
     
+    //Parser the Schema Definition for the current Observer and displays it
     function parseSchema(response)
     {
 	var $mycontainer = $(".template-text").clone();
@@ -600,6 +636,7 @@ $(document).ready(function() {
 
 });
 
+//Uses HighCharts to plot Summaries for each user. To plot the graph, a stacked percent Column graph for speech, nonspeech and missing points is drawn.
 function plotDashboard(options)
 {
     var $mycontainer = $(".template-chart").clone();
@@ -682,6 +719,7 @@ function plotDashboard(options)
     });
 }
 
+//Uses HighCharts to plot speech patterns for an user over a period of time. To plot the graph, a stacked percent Column graph for speech, nonspeech and missing points is drawn.
 function plotSpeech(options)
 {
     var $mycontainer = $(".template-chart").clone();
@@ -697,6 +735,7 @@ function plotSpeech(options)
 	    borderWidth: 1,
 	    events : {
 		selection: function(event) {
+		    //Used to update the map once this graph's zoom level is changed
 		    if(!event.xAxis)
 		    {
 			resetMarkers();
@@ -757,6 +796,7 @@ function plotSpeech(options)
     });
 }
 
+//Uses HighCharts to plot Summaries for each user. To plot the graph, a stacked percent Column graph for speech, nonspeech and missing points is drawn.
 function plotSpeech_compare(options)
 {
     var $mycontainer = $(".template-chart").clone();
@@ -842,6 +882,8 @@ function plotSpeech_compare(options)
     charts.push(chart);
 }
 
+
+//Not Used anymore
 function plotSpeech_old(options)
 {
     console.log("in plotSpeech_old");
@@ -904,9 +946,11 @@ function plotSpeech_old(options)
 
 function plotSensor(options)
 {
+    //Waits till the speechdata is completely retrieved. Thsi is required since speech data is required for platting points on the Map.
     waitForSpeech(plotSensor_real, options);
 }
 
+//Called once the Speech Data is loaded. Calls the actual Sensor Plot function.
 function plotSensor_real(options)
 {
     plotLocation(jQuery.extend(options, {outerElement: options.outerElementArr[0]}));
@@ -914,6 +958,7 @@ function plotSensor_real(options)
     plotBattery(jQuery.extend(options, {outerElement: options.outerElementArr[2]}));
 }
 
+//Plots the battery graph for an user
 function plotBattery(options)
 {
     var $mycontainer = $(".template-chart").clone();
@@ -964,6 +1009,7 @@ function plotBattery(options)
     });
 }
 
+//Plots the location for an user using Google Maps v3
 function plotLocation(options)
 {
     var $mycontainer = $(".template-map").clone();
@@ -981,6 +1027,8 @@ function plotLocation(options)
             mapOptions);
         
     var bounds = new google.maps.LatLngBounds();
+    
+    //Different Icons for each type of Data
     var icons = {};
     icons['speech'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png");
     icons['nonspeech'] = new google.maps.MarkerImage("http://www.google.com/intl/en_us/mapfiles/ms/micons/orange-dot.png");
@@ -992,8 +1040,10 @@ function plotLocation(options)
         var location = locationArray[i]
 	markers.push(createMarker(options, map, location, bounds, icons));
     }
+    //Used to set the corerct Zoom Level
     map.fitBounds(bounds);
     
+    //Used to cluster points together. Else there are too many points being plotted on the map.
     markerCluster = new MarkerClusterer(map,
 					    markers,
 					    {gridSize: 20,
@@ -1005,6 +1055,7 @@ function plotLocation(options)
 						    index: 2
 						};
 					    }});
+    //Used to add summaries to the clusters
     google.maps.event.addListener(markerCluster,
 				'mouseover',
 				function(cluster) {
@@ -1017,8 +1068,10 @@ function plotLocation(options)
 				});
 }
 
+//Plots a table summary for Locations
 function plotLocationSummary(options)
 {
+    //Disables in case Quick Load is chosen. For multiple days, the clustering can be annoyingly slow.
     if(quickload)
     {
 	options.outerElement.hide();
@@ -1038,6 +1091,8 @@ function plotLocationSummary(options)
         var location = locationArray[i]
 	clustersArr.push([location[1].latitude, location[1].longitude])
     }
+    
+    //Clusters adjacent points together
     clusters = clusterfck.hcluster(clustersArr, clusterfck.EUCLIDEAN_DISTANCE, clusterfck.AVERAGE_LINKAGE, 0.001);
     var clusterMap = generateMap(clusters);
     var clusterDict = generateMapDict(clusters);
@@ -1118,6 +1173,7 @@ function plotLocationSummary(options)
     }
 }
 
+//Adds a row to the Location Summary Table
 function addLocationRow(ob, trow)
 {
     $("<td>")
@@ -1143,6 +1199,7 @@ function addLocationRow(ob, trow)
 	   .appendTo(trow);
 }
 
+//Adds an entry to the SpeechArray
 function pushToSpeechArray(timestamp, uname, speech, nonspeech, missing)
 {
     speechArray[uname]["speech"].push([timestamp, speech]);
@@ -1156,6 +1213,7 @@ function pushToSpeechArray(timestamp, uname, speech, nonspeech, missing)
         speechMap[uname][timestamp] = 'missing';
 }
 
+//Calls "func" once the Speech data is completely loaded
 function waitForSpeech(func, options)
 {
     if (!speechReady)
@@ -1168,6 +1226,7 @@ function waitForSpeech(func, options)
     }
 }
 
+//not used anymore
 function getSpeechArrayData(dataArray, type)
 {
     var ret = [];
@@ -1193,12 +1252,14 @@ function getSpeechArrayData(dataArray, type)
     return ret;
 }
 
+//Creates a Google Maps Marker for the given location
 function createMarker(options, map, location, bounds, icons)
 {
     var pos = new google.maps.LatLng(location[1].latitude, location[1].longitude);
     bounds.extend(pos);
     markerOptions = {};
     
+    //Used to get the speech/nonspeech mode for that datapoint
     baseTS = getBase(location[1].frameNo);
     var mode = speechMap[options.uname][baseTS];
     if(mode == undefined)
@@ -1212,6 +1273,7 @@ function createMarker(options, map, location, bounds, icons)
 	icon : icons[mode]
     });
     
+    //Adds Listeners for each Point. May cause a considerable slowdown in performance
     if(!quickload)
     {
 	var contentString = '<div id="content">'+
@@ -1238,6 +1300,7 @@ function createMarker(options, map, location, bounds, icons)
     return marker;
 }
 
+//Generates Summaries for a cluster of Markers
 function getClusterText(markers)
 {
     var summary = {};
@@ -1260,6 +1323,7 @@ function getClusterText(markers)
     return contentString;
 }
 
+//Makes all markers visible on the map again
 function resetMarkers()
 {
     for(index in markers)
@@ -1270,6 +1334,7 @@ function resetMarkers()
     resetInfoWindow();
 }
 
+//Enables only the markers in the specified timerange, all other markers are hidden
 function selectMarkers(start, end)
 {
     for(index in markers)
@@ -1318,6 +1383,7 @@ function addToMap(node, map, index)
     }
 }
 
+//Gets the Semantic location for teh coordinates and adds the row to the Location Summary Table
 function parseSemanticLocation(ob, trow, cache)
 {
     var geocoder = new google.maps.Geocoder();
@@ -1349,6 +1415,7 @@ function parseSemanticLocation(ob, trow, cache)
     }
 }
 
+//Creates Parameters Object to be used with the Observer Stream Read POST request
 function getParameters(stream_id, stream_version, username, start_date, end_date)
 {
     return {
@@ -1363,6 +1430,7 @@ function getParameters(stream_id, stream_version, username, start_date, end_date
 	    };    
 }
 
+//Creates Parameters Object to be used with the Observer Read POST request
 function getParametersforSchema()
 {
     return {
@@ -1372,6 +1440,7 @@ function getParametersforSchema()
 	    };    
 }
 
+//Adds to the parameters Object if the value is not null
 function addToParametersIfNotEmpty(parameters, name, value)
 {
     if(value != undefined && value.trim() != '')
@@ -1389,6 +1458,7 @@ function getData(address, parameters, dataFun, options, num_to_skip)
     oh.call(address, parameters, dataFun, options);   
 }
 
+//Used to get more data, if the first response does not return all the responses
 function getMoreData(response, dataFun, options)
 {
     console.log("in getMoreData");
@@ -1397,6 +1467,7 @@ function getMoreData(response, dataFun, options)
     dataFun(options=options, num_to_skip=num_to_skip);
 }
 
+//Checks if the response is the First Response
 function isFirstResult(response)
 {
     if(response.metadata == undefined)
@@ -1412,6 +1483,7 @@ function isFirstResult(response)
     }
 }
 
+//Creates a new outer Div for a Graph along with the Close Button
 function getOuterElement(title, outerElement)
 {
     var $mycontainer = $(".template-outer").clone();
@@ -1431,6 +1503,7 @@ function getOuterElement(title, outerElement)
     return $mycontainer;
 }
 
+//Used to add Tips at the top of the page
 function addTips(strings)
 {
     var $mycontainer = $(".template-tip").clone();
@@ -1445,6 +1518,7 @@ function addTips(strings)
     }
 }
 
+//The tips on the RawData page aso show the amount of data already downloaded
 function updateRawdataTip()
 {
     var $mycontainer = $("#container").find('.tip').find('ul');
@@ -1454,6 +1528,7 @@ function updateRawdataTip()
     $mycontainer.append($("<li></li>").html('In such a situation, try again later or contact the webmaster'));
 }
 
+//Clears all graphs on the page
 function clearContainer()
 {
     $("#container").empty();
@@ -1463,12 +1538,14 @@ function clearContainer()
     speechReady = false;
 }
 
+//Resets Info Windows in the Google Map
 function resetInfoWindow()
 {
     if(infoWindow != undefined)
 	infoWindow.close();
 }
 
+//Checks the current Response to see if further Data is Present
 function isMoreDataPresent(response)
 {
     if((response.metadata != undefined) && (response.metadata.count >= maximumRecords) && !(typeof(response.metadata.next) == undefined))
