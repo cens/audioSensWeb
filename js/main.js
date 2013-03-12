@@ -147,7 +147,7 @@ $(document).ready(function() {
 		 "Hover over points in the map to get more details about the point/cluster of points",
 		 "In the map, Speech points are green in color, non-speech points are orange in color",
 		 "Blue points in the map stand for pending points. Pending points stand for points which are still being processed. Kindly check after sometime to view those points as well",
-		 "The map summary lists all locations with more than 5 continuous points",
+		 "The map summary lists all locations with more than 10 continuous points",
 		 "The 'List of events' logs major events related to the app, such as the app being started/stopped, the phone rebooting and the app crashing",
 		 "The charts may take a few seconds to load, kindly be patient (Multiple days take longer)"]);
 	getSpeech(options = {nextFun : plotSpeech,
@@ -1165,7 +1165,7 @@ function plotLocationSummary(options)
 
     for (var i = 0; i < clusterOp.length; i++)
     {
-	if(clusterOp[i].count<5)
+	if(clusterOp[i].count<=10)
 	    continue;
 	var trow = $("<tr>");
 	parseSemanticLocation(clusterOp[i], trow , semanticCache);
