@@ -1,6 +1,6 @@
 var oh = oh || {};
 
-var ohmageServerUrl = "https://test.ohmage.org";
+var ohmageServerUrl = "https://internal.ohmage.org";
 
 oh.call = function(path, data, datafun, options){
 	
