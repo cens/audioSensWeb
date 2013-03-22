@@ -60,8 +60,14 @@ $(document).ready(function() {
             for(var key in response.data["urn:class:audiosens"].users)
             {
                 userList.push(key);
-                options.append($("<option />").val(key).text(key));
             }
+	    
+	    userList = userList.sort();
+	    
+	    for(index  in userList)
+	    {
+		options.append($("<option />").val(userList[index]).text(userList[index]));
+	    }
         });
     
     //Logout Button
